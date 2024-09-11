@@ -9,6 +9,7 @@ const App = () =>{
   return (
     <main className="w-[90%] m-auto">
       <Landing /> 
+      <Footer />
       {/* 
       <NabVar />
       <Buscador />
