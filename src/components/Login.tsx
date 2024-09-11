@@ -8,7 +8,7 @@ import { FaComputer } from "react-icons/fa6";
 import { UserIcon, KeyIcon } from 'lucide-react'
 
 const Login: React.FC = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' })
+  const [credentials, setCredentials] = useState({ boleta: '', password: '' })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,7 +28,7 @@ const Login: React.FC = () => {
       window.location.href = '/alumno'
     } catch (error) {
       console.error(error)
-      setError('Invalid username or password. Please try again.')
+      setError('Boleta o contraseña inválida. Por favor, intente de nuevo.')
     } finally {
       setIsLoading(false)
     }
@@ -40,18 +40,18 @@ const Login: React.FC = () => {
         <div className="max-w-4xl w-full space-y-8">
           <div className='buscadorDiv grid gap-10 bg-secondary rounded-lg p-[3rem]'>
             <h1 className='text-3xl font-bold text-center text-oscure'>Bienvenido</h1>
-            <p className='text-center text-gray-600'>Ingresa las credenciales para iniciar sesión</p>
+            <p className='text-center text-gray-600'>Ingresa tus credenciales para iniciar sesión</p>
             <form onSubmit={handleSubmit}>
               <div className='primerDiv flex flex-col justify-between items-center rounded-xl gap-4 p-5 shadow-sm shadow-oscure bg-white'>
                 <div className='flex gap-2 items-center w-full relative'>
                   <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
-                    name="username"
-                    value={credentials.username}
+                    name="boleta"
+                    value={credentials.boleta}
                     onChange={handleChange}
                     className='bg-transparent text-oscure focus:outline-none w-full pl-10'
-                    placeholder='Enter your username'
+                    placeholder='Ingresa tu número de boleta'
                     required
                   />
                 </div>
@@ -63,7 +63,7 @@ const Login: React.FC = () => {
                     value={credentials.password}
                     onChange={handleChange}
                     className='bg-transparent text-oscure focus:outline-none w-full pl-10'
-                    placeholder='Enter your password'
+                    placeholder='Ingresa tu contraseña'
                     required
                   />
                 </div>
@@ -77,7 +77,7 @@ const Login: React.FC = () => {
                   className='bg-oscure w-full p-3 rounded-xl text-white cursor-pointer hover:bg-primary'
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Logging in...' : 'Log in'}
+                  {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                 </button>
               </div>
             </form>

@@ -3,23 +3,26 @@ import axios, { AxiosError } from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 interface UserData {
-  username: string;
-  email: string;
-  password: string;
-  // Add any other fields that are part of the user registration data
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  boleta: string;
+  correo: string;
+  carrera: string;
+  plan_estudios: string;
 }
 
 interface Credentials {
-  username: string;
+  boleta: string;
   password: string;
 }
 
 interface ApiResponse {
-  // Define the structure of your API response
-  // This is just an example, adjust according to your actual API response
+  // Define la estructura de tu respuesta API
+  // Esto es solo un ejemplo, ajusta según la respuesta real de tu API
   token?: string;
   message?: string;
-  // Add other fields as necessary
+  // Agrega otros campos según sea necesario
 }
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
