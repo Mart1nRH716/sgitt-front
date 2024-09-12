@@ -7,13 +7,14 @@ interface UserData {
   apellido_paterno: string;
   apellido_materno: string;
   boleta: string;
-  correo: string;
+  email: string;
   carrera: string;
   plan_estudios: string;
+  password: string;
 }
 
 interface Credentials {
-  boleta: string;
+  email: string;
   password: string;
 }
 

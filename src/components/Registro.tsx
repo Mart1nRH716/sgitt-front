@@ -10,19 +10,40 @@ const Register: React.FC = () => {
     apellido_paterno: '',
     apellido_materno: '',
     boleta: '',
-    correo: '',
+    email: '',
     carrera: '',
     plan_estudios: '',
+    password: '',
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    
+    if (e.target.name === 'confirmPassword' || e.target.name === 'password') {
+      validatePasswords();
+    }
+  };
+
+  const validatePasswords = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+    } else {
+      setPasswordError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
     try {
       const response = await register(formData);
       console.log(response);
@@ -88,17 +109,48 @@ const Register: React.FC = () => {
             />
           </div>
           <div>
-            <label htmlFor="correo" className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
             <input
-              id="correo"
-              name="correo"
+              id="email"
+              name="email"
               type="email"
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.correo}
+              value={formData.email}
               onChange={handleChange}
             />
           </div>
+          
+          {/* Nuevos campos de contraseña */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={formData.password}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contraseña</label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+            />
+          </div>
+          
+          {passwordError && (
+            <div className="text-red-500 text-sm">{passwordError}</div>
+          )}
+          
           <div>
             <label htmlFor="carrera" className="block text-sm font-medium text-gray-700 mb-1">Carrera</label>
             <select

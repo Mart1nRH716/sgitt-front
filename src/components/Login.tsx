@@ -8,7 +8,7 @@ import { FaComputer } from "react-icons/fa6";
 import { UserIcon, KeyIcon } from 'lucide-react'
 
 const Login: React.FC = () => {
-  const [credentials, setCredentials] = useState({ boleta: '', password: '' })
+  const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -25,7 +25,7 @@ const Login: React.FC = () => {
       const response = await login(credentials)
       console.log(response)
       // Handle success (e.g., save token and redirect to dashboard)
-      window.location.href = '/alumno'
+      window.location.href = '/home'
     } catch (error) {
       console.error(error)
       setError('Boleta o contraseña inválida. Por favor, intente de nuevo.')
@@ -47,8 +47,8 @@ const Login: React.FC = () => {
                   <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
-                    name="boleta"
-                    value={credentials.boleta}
+                    name="email"
+                    value={credentials.email}
                     onChange={handleChange}
                     className='bg-transparent text-oscure focus:outline-none w-full pl-10'
                     placeholder='Ingresa tu número de boleta'
