@@ -17,22 +17,27 @@ const Login: React.FC = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
-
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+  
     try {
-      const response = await login(credentials)
-      console.log(response)
-      // Handle success (e.g., save token and redirect to dashboard)
-      window.location.href = '/home'
+      const response = await login(credentials);
+      console.log(response);
+      
+      // Save tokens to localStorage
+      localStorage.setItem('refreshToken', response.refresh);
+      localStorage.setItem('accessToken', response.access);
+      
+      // Redirect to dashboard
+      window.location.href = '/home';
     } catch (error) {
-      console.error(error)
-      setError('Boleta o contraseña inválida. Por favor, intente de nuevo.')
+      console.error(error);
+      setError('Boleta o contraseña inválida. Por favor, intente de nuevo.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
