@@ -20,8 +20,13 @@ const config: Config = {
         'help1': '#FFD700', 
         'help2': '#FF8500', 
       },
+      lineClamp: {
+        3: '3', // Esto permitirá truncar después de 3 líneas
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 };
 export default config;

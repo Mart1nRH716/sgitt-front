@@ -1,25 +1,39 @@
-import React from 'react'
-import { BiSearchAlt } from 'react-icons/bi'
+// Buscador.tsx
+'use client'; // Esto marca el componente como Client Component
+import React, { useState } from 'react';
+import { BiSearchAlt } from 'react-icons/bi';
 import { MdOutlineCancel } from "react-icons/md";
+import { Propuesta } from '../utils/propuestas';
 
+interface BuscadorProps {
+  onSearch: (term: string) => void;
+}
 
+const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => { // Agrega props para recibir la función de búsqueda
+  const [buscar, setBuscar] = useState("");
 
-const Buscador = () => {
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSearch(buscar); // Llama a la función onSearch con el término de búsqueda
+  };
+
   return (
     <div className='buscadorDiv grid gap-10 bg-secondary rounded-lg p-[3rem]'>
-      <form action="">
-
+      <form onSubmit={handleSearch}>
         {/* Buscador */}
         <div className='primerDiv flex justify-between items-center rounded-xl gap-2 p-5 shadow-sm shadow-oscure bg-white '>
           <div className='flex gap-2 items-center w-full'>
             <BiSearchAlt className='text-xl icon' />
-            <input type="text" className='bg-transparent text-oscure focus:outline-none w-full' placeholder='Busca una propuesta'/>
-            <MdOutlineCancel className='text-xl icon text-red-500 hover:text-oscure mx-5'/>
+            <input 
+              type="text" 
+              className='bg-transparent text-oscure focus:outline-none w-full' 
+              placeholder='Busca una propuesta' 
+              value={buscar} // Vincula el valor del input al estado
+              onChange={(e) => setBuscar(e.target.value)} // Actualiza el estado al escribir
+            />
+            <MdOutlineCancel className='text-xl icon text-red-500 hover:text-oscure mx-5' onClick={() => setBuscar('')} />
           </div>
-
           <button className='bg-oscure h-full p-5 px-10 rounded-xl text-white cursor-pointer hover:bg-primary'>Buscar</button>
-
-
         </div>
       </form>
 
