@@ -31,6 +31,30 @@ li:hover::before {
 .icon{
   cursor: pointer;
 }
+
+
+.sidebar-menu a{
+    @apply flex items-center gap-4 py-2 px-3 hover:bg-help3 font-medium text-lg border-l-4 border-transparent whitespace-nowrap; /* Utilidades de Tailwind */
+}
+.sidebar-menu .active{
+    @apply border-primary bg-help3 text-primary; /* Utilidades de Tailwind */
+}
+.sidebar-menu-icon{
+    @apply text-3xl; /* Utilidades de Tailwind */
+}
+.sidebar-dropdown{
+    @apply font-normal; /* Utilidades de Tailwind */
+}
+.sidebar-collapse {
+    @apply md:w-16 -left-full md:left-0; /* Utilidades de Tailwind */
+}
+.tab-indicator > *{
+    @apply pb-1 border-b-4 border-transparent font-medium text-lg text-gray-500; /* Utilidades de Tailwind */
+}
+.tab-indicator .active{
+    @apply border-primary text-primary; /* Utilidades de Tailwind */
+}
+
 /*
 .card{
   background: var(--oscure);
