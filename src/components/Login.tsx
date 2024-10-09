@@ -1,11 +1,9 @@
-'use client'
+"use client";
 
 import React, { useState } from 'react'
 import { login } from '../app/utils/api'
-import { BiSearchAlt } from 'react-icons/bi'
-import { FiClock } from "react-icons/fi";
-import { FaComputer } from "react-icons/fa6";
-import { UserIcon, KeyIcon } from 'lucide-react'
+import { UserIcon, KeyIcon, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 const Login: React.FC = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
@@ -33,7 +31,11 @@ const Login: React.FC = () => {
       window.location.href = '/home';
     } catch (error) {
       console.error(error);
-      setError('Boleta o contraseña inválida. Por favor, intente de nuevo.');
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Ocurrió un error al iniciar sesión. Por favor, intente de nuevo.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -44,6 +46,10 @@ const Login: React.FC = () => {
       <main className="flex-grow flex items-center justify-center px-4">
         <div className="max-w-4xl w-full space-y-8">
           <div className='buscadorDiv grid gap-10 bg-secondary rounded-lg p-[3rem]'>
+            <Link href="/" className="flex items-center text-oscure hover:text-primary transition-colors">
+              <ArrowLeft size={20} className="mr-2" />
+              Volver al inicio
+            </Link>
             <h1 className='text-3xl font-bold text-center text-oscure'>Bienvenido</h1>
             <p className='text-center text-gray-600'>Ingresa tus credenciales para iniciar sesión</p>
             <form onSubmit={handleSubmit}>
@@ -56,7 +62,7 @@ const Login: React.FC = () => {
                     value={credentials.email}
                     onChange={handleChange}
                     className='bg-transparent text-oscure focus:outline-none w-full pl-10'
-                    placeholder='Ingresa tu número de boleta'
+                    placeholder='Ingresa tu correo'
                     required
                   />
                 </div>

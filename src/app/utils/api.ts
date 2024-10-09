@@ -54,9 +54,14 @@ export const login = async (credentials: Credentials): Promise<ApiResponse> => {
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw error.response?.data || error.message;
+      if (error.response?.status === 403) {
+        throw new Error(error.response.data.error || "No tienes permiso para acceder. Verifica tu correo o contacta al administrador.");
+      } else if (error.response?.status === 401) {
+        throw new Error("Credenciales inválidas. Por favor, verifica tu correo y contraseña.");
+      }
+      throw error.response?.data?.error || "Ocurrió un error al iniciar sesión.";
     }
-    throw error;
+    throw new Error("Ocurrió un error inesperado. Por favor, intenta de nuevo.");
   }
 };
 
@@ -87,6 +92,22 @@ export const crearPropuesta = async (propuestaData: PropuestaData): Promise<ApiR
       throw error.response?.data || error.message;
     }
     console.error('Error no Axios:', error);
+    throw error;
+  }
+};
+
+export const verifyEmail = async (token: string): Promise<ApiResponse> => {
+  try {
+    const response = await axios.get<ApiResponse>(`${API_URL}/verify-email/${token}/`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // Si la respuesta contiene datos, devuélvelos
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw error.response?.data || error.message;
+    }
     throw error;
   }
 };

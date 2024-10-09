@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { register } from '../app/utils/api';
-
+import { useRouter } from 'next/navigation';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -18,24 +18,10 @@ const Register: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    
-    if (e.target.name === 'confirmPassword' || e.target.name === 'password') {
-      validatePasswords();
-    }
-  };
-
-  const validatePasswords = () => {
-    if (formData.password !== formData.confirmPassword) {
-      setPasswordError('Las contraseñas no coinciden');
-    } else {
-      setPasswordError('');
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     
@@ -47,19 +33,44 @@ const Register: React.FC = () => {
     try {
       const response = await register(formData);
       console.log(response);
-      // Manejar el éxito (por ejemplo, redirigir al login)
+      setRegistrationSuccess(true);
+      setTimeout(() => {
+        router.push('/');
+      }, 5000);
     } catch (error) {
       console.error(error);
       setError('Error al registrar. Por favor, intente nuevamente.');
     }
-  };
+  }, [formData, router]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({ ...prevData, [name]: value }));
+  }, []);
+
+  useEffect(() => {
+    if (formData.password === formData.confirmPassword) {
+      setPasswordError('');
+    } else if (formData.confirmPassword !== '') {
+      setPasswordError('Las contraseñas no coinciden');
+    }
+  }, [formData.password, formData.confirmPassword]);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-gray-100 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Registro</h2>
-        <p className="text-center text-gray-600 mb-8">Crea una nueva cuenta</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {registrationSuccess ? (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">¡Registro Exitoso!</h2>
+            <p className="mb-4">Se ha enviado un correo de verificación a tu dirección de email.</p>
+            <p>Por favor, verifica tu correo para activar tu cuenta.</p>
+            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la página de inicio en 5 segundos...</p>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Registro</h2>
+            <p className="text-center text-gray-600 mb-8">Crea una nueva cuenta</p>
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input
@@ -183,17 +194,19 @@ const Register: React.FC = () => {
             </select>
           </div>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          <button
-            type="submit"
-            className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
-          >
-            Registrarse
-          </button>
-        </form>
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                  <span className="block sm:inline">{error}</span>
+                </div>
+              )}
+              <button
+                type="submit"
+                className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+              >
+                Registrarse
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
