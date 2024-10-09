@@ -19,6 +19,7 @@ const config: Config = {
         'oscure': '#023047', 
         'help1': '#FFD700', 
         'help2': '#FF8500', 
+        'help3': '#E0EEF8',
       },
       lineClamp: {
         3: '3', // Esto permitirá truncar después de 3 líneas
