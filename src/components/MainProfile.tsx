@@ -2,6 +2,8 @@
 'use client';
 import React, { useState } from 'react';
 import { LuPencilLine } from "react-icons/lu";
+import Footer from '@/components/Footer';
+
 
 const MainProfile: React.FC<{ isSidebarCollapsed: boolean }> = ({ isSidebarCollapsed }) => {
     const [activeTab, setActiveTab] = useState('seguridad'); // Estado para el tab activo
@@ -27,7 +29,7 @@ const MainProfile: React.FC<{ isSidebarCollapsed: boolean }> = ({ isSidebarColla
                 </a>
             </div>
             <p className='text-gray-500 text-lg mt-4 mb-8'>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque unde necessitatibus, aliquam suscipit corporis consequatur velit non ipsum ratione sit, nobis sequi modi quasi, deleniti officia nisi explicabo fuga ea?</p>
-            <div>
+            <div className=''>
                 <div className='flex items-center gap-8 tab-indicator border-b border-help3 cursor-pointer'>
                     <span className={`${activeTab === 'seguridad' ? 'active' : ''}`} onClick={() => setActiveTab('seguridad')}>Seguridad</span>
                     <span className={`${activeTab === 'actividad' ? 'active' : ''}`} onClick={() => setActiveTab('actividad')}>Mi actividad</span>
@@ -52,7 +54,10 @@ const MainProfile: React.FC<{ isSidebarCollapsed: boolean }> = ({ isSidebarColla
                 </div>
             </div>
         </div>
+        <Footer />
       </div>
+      
+      
     );
 };
 
