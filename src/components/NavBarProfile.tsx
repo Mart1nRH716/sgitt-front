@@ -16,7 +16,7 @@ const NavBarProfile: React.FC<NavBarProfileProps> = ({ toggleSidebar }) => {
         <div className='flex items-center h-full gap-12'>
           <IoMdMenu className='mx-4 text-2xl cursor-pointer' onClick={toggleSidebar} />
           <a href="#" className='flex items-center gap-4'>
-            <h1 className='logo text-[25px] text-oscure font-bold'>SGI<span className='text-secondary'>TT</span></h1>
+            <h1 className='logo text-[25px] cursor-pointer text-oscure font-bold'>SGI<span className='text-secondary'>TT</span></h1>
           </a>
           <form action="" className='flex-1 max-w-lg hidden md:block'>
             <input type="search" name="buscador" id="buscador" placeholder='Realiza una busqueda' className='w-full py-2 px-4 rounded bg-gray-100 border border-secondary outline-none focus:ring-2 focus:ring-primary' />

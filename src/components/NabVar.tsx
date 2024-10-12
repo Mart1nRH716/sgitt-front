@@ -4,7 +4,7 @@ const NabVar = () => {
   return (
     <div className='navBar flex justify-between items-center p-[3rem]'>
       <div className='logoDiv'>
-        <h1 className='logo text-[25px] text-oscure font-bold'>SGI<span className='text-secondary '>TT</span></h1>
+        <h1 className='logo text-[25px] cursor-pointer text-oscure font-bold'>SGI<span className='text-secondary '>TT</span></h1>
       </div>
 
       <div className='menu flex gap-7'>
