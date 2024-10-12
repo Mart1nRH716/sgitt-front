@@ -22,7 +22,7 @@ li:hover::before {
   content: '';
   height: 3px;
   width: 100%;
-  background: var(--secondary);
+  /* background: var(--secondary); */
   right: 0;
   bottom: -10px;
   color: var(--primary);
@@ -53,6 +53,10 @@ li:hover::before {
 }
 .tab-indicator .active{
     @apply border-primary text-primary; /* Utilidades de Tailwind */
+}
+
+.table-title {
+    @apply font-bold text-primary text-xl mb-2 uppercase; /* Utilidades de Tailwind */
 }
 
 /*
