@@ -38,10 +38,12 @@ interface ApiResponse {
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
   try {
+    console.log('Datos enviados al servidor:', userData);
     const response = await axios.post<ApiResponse>(`${API_URL}/register/`, userData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      console.error('Error de respuesta:', error.response?.data);
       throw error.response?.data || error.message;
     }
     throw error;
