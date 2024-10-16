@@ -27,6 +27,14 @@ interface PropuestaData {
   palabras_clave: string[];
 }
 
+interface Propuesta {
+  id: number;
+  nombre: string;
+  objetivo: string;
+  fecha_creacion: string;
+  // Agrega más campos según sea necesario
+}
+
 
 interface ApiResponse {
   // Define la estructura de tu respuesta API
@@ -111,5 +119,28 @@ export const verifyEmail = async (token: string): Promise<ApiResponse> => {
       throw error.response?.data || error.message;
     }
     throw error;
+  }
+};
+
+
+export const obtenerPropuestasUsuario = async (): Promise<Propuesta[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get<Propuesta[]>(`${API_URL}/propuestas/mis_propuestas/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // Propagamos el error de Axios para que sea manejado en el componente
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las propuestas');
   }
 };

@@ -2,7 +2,8 @@
 
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { PlusCircle, X } from 'lucide-react';
-import { crearPropuesta } from '../app/utils/api'; 
+import { crearPropuesta } from '../app/utils/api';
+import { useRouter } from 'next/navigation';
 
 interface PropuestaForm {
     nombre: string;
@@ -14,6 +15,9 @@ interface PropuestaForm {
   }
   
   const CrearPropuesta: React.FC = () => {
+    const router = useRouter();
+    const [success, setSuccess] = useState(false);
+
     const [propuesta, setPropuesta] = useState<PropuestaForm>({
       nombre: '',
       objetivo: '',
@@ -67,32 +71,39 @@ interface PropuestaForm {
     };
   
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      setIsLoading(true);
-      setError('');
-  
-      try {
-        const response = await crearPropuesta(propuesta);
-        console.log('Propuesta creada:', response);
-        // Aquí puedes manejar la respuesta exitosa, por ejemplo, redirigiendo al usuario
-        // o mostrando un mensaje de éxito
-      } catch (error) {
-        console.error('Error al crear la propuesta:', error);
-        setError('Hubo un error al crear la propuesta. Por favor, intente de nuevo.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await crearPropuesta(propuesta);
+      console.log('Propuesta creada:', response);
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/perfil/mispropuestas');
+      }, 2000);
+    } catch (error) {
+      console.error('Error al crear la propuesta:', error);
+      setError('Hubo un error al crear la propuesta. Por favor, intente de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-gray-100 p-4">
-        <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Crear Nueva Propuesta</h2>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Crear Nueva Propuesta</h2>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span className="block sm:inline">Propuesta creada exitosamente. Redirigiendo...</span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Propuesta</label>
