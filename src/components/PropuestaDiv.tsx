@@ -1,35 +1,45 @@
-// PropuestaDiv.tsx
-'use client'; // Esto marca el componente como Client Component
-import React, { useState } from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import { FiClock } from "react-icons/fi";
-import { Propuesta } from '../utils/propuestas'; // Importa las propuestas
 import { GiSharkFin } from "react-icons/gi";
+import { obtenerPropuestas } from '../app/utils/api';
 
 type PropuestaType = {
   id: number;
-  logo: JSX.Element;
   nombre: string;
-  time: string;
-  area: string;
-  descripcion: string;
-  carrera: string;
+  objetivo: string;
+  palabras_clave: { id: number; palabra: string }[];
+  fecha_creacion: string;
+  fecha_actualizacion: string;
 };
 
-const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => { // Agrega la prop searchTerm
+const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
+  const [propuestas, setPropuestas] = useState<PropuestaType[]>([]);
   const [selected, setSelected] = useState<PropuestaType | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const propuestasPerPage = 4;
 
-  // Función para manejar la selección de propuesta
+  useEffect(() => {
+    const fetchPropuestas = async () => {
+      try {
+        const data = await obtenerPropuestas();
+        setPropuestas(data);
+      } catch (error) {
+        console.error('Error al obtener propuestas:', error);
+      }
+    };
+
+    fetchPropuestas();
+  }, []);
+
   const handleSelect = (propuesta: PropuestaType) => {
     setSelected(propuesta);
   };
 
-  // Filtrar las propuestas basadas en el término de búsqueda
-  const filteredPropuestas = Propuesta.filter((propuesta) => 
-    propuesta.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))  );
+  const filteredPropuestas = propuestas.filter((propuesta) => 
+    propuesta.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+  );
 
-  // Funciones de paginación
   const totalPropuestas = filteredPropuestas.length;
   const totalPages = Math.ceil(totalPropuestas / propuestasPerPage);
   const startIndex = (currentPage - 1) * propuestasPerPage;
@@ -43,44 +53,48 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => { // Agrega la 
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  // Función para cerrar la información detallada
   const handleCloseDetails = () => {
     setSelected(null);
   };
 
   return (
-    <div className='flex flex-col items-center'> {/* Cambiar a flex-col para alinear verticalmente */}
-      <div className='flex w-full'>
-        {/* Tarjetas a la izquierda */}
-        <div className='w-1/3'>
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2 py-7'>
+    <div className='flex flex-col items-center w-full'>
+      <div className='flex flex-col md:flex-row w-full'>
+        <div className='w-full md:w-1/3'>
+          <div className='grid grid-cols-1 gap-6 py-7'>
             {selectedPropuestas.map((propuesta) => (
               <div
                 key={propuesta.id}
                 onClick={() => handleSelect(propuesta)}
-                className={`group propUnica p-5 bg-white rounded-xl hover:bg-secondary shadow-lg shadow-oscure-400/700 cursor-pointer h-[20rem] flex flex-col justify-between ${selected && selected.id === propuesta.id ? 'bg-secondary' : ''}`}
+                className={`group propUnica p-5 bg-white rounded-xl hover:bg-secondary shadow-lg shadow-oscure-400/700 cursor-pointer flex flex-col justify-between ${selected && selected.id === propuesta.id ? 'bg-secondary' : ''}`}
               >
-                <div>
-                  <span className='flex justify-between items-center gap-4'>
-                    <h1 className='text-base font-semibold text-black group-hover:text-white'>{propuesta.nombre}</h1>
-                    <span className='flex items-center text-gray-400 gap-1'>
-                      <FiClock /> {propuesta.time}
+                <div className='flex flex-col h-full'>
+                  <div className='flex justify-between items-start gap-2 mb-2'>
+                    <h1 className='text-base font-semibold text-black group-hover:text-white break-words flex-grow'>{propuesta.nombre}</h1>
+                    <span className='flex items-center text-gray-400 gap-1 whitespace-nowrap'>
+                      <FiClock className="flex-shrink-0" /> {new Date(propuesta.fecha_actualizacion).toLocaleDateString()}
                     </span>
-                  </span>
-                  <h6 className='text-gray-500'>{propuesta.area}</h6>
-                  <p className='text-sm text-gray-400 pt-5 border-t-2 mt-5 group-hover:text-white overflow-hidden line-clamp-5'>
-                    {propuesta.descripcion}
+                  </div>
+                  <p className='text-sm text-gray-400 pt-2 border-t-2 mt-2 group-hover:text-white overflow-hidden line-clamp-4 flex-grow'>
+                    {propuesta.objetivo}
                   </p>
-                </div>
-                <div className='carrera flex items-center gap-2 mt-auto'>
-                  {propuesta.logo}
-                  <span className='text-sm py-4 block group-hover:text-white'>{propuesta.carrera}</span>
+                  <div className='palabras-clave flex flex-wrap gap-2 mt-auto pt-2'>
+                    {propuesta.palabras_clave.slice(0, 3).map((palabra) => (
+                      <span key={palabra.id} className='text-xs bg-gray-200 rounded-full px-2 py-1 truncate'>
+                        {palabra.palabra}
+                      </span>
+                    ))}
+                    {propuesta.palabras_clave.length > 3 && (
+                      <span className='text-xs bg-gray-200 rounded-full px-2 py-1'>
+                        +{propuesta.palabras_clave.length - 3}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Paginación */}
           {totalPages > 1 && (
             <div className='flex justify-center gap-4 mt-4'>
               <button
@@ -101,24 +115,29 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => { // Agrega la 
           )}
         </div>
 
-        {/* Información detallada a la derecha */}
-        <div className='w-2/3 p-5'>
+        <div className='w-full md:w-2/3 p-5'>
           {selected ? (
             <div className='bg-white p-6 rounded-lg shadow-md relative'>
-              {/* Botón para cerrar la información detallada */}
               <button 
                 onClick={handleCloseDetails} 
                 className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
               >
-                &times; {/* Símbolo de "X" */}
+                &times;
               </button>
-              <h2 className='text-2xl font-bold'>{selected.nombre}</h2>
-              <p className='text-gray-600'>{selected.descripcion}</p>
-              <p><strong>Área:</strong> {selected.area}</p>
-              <p><strong>Carrera:</strong> {selected.carrera}</p>
-              <p><strong>Tiempo:</strong> {selected.time}</p>
-
-              {/* Botones de acción a la derecha */}
+              <h2 className='text-2xl font-bold break-words'>{selected.nombre}</h2>
+              <p className='text-gray-600 mt-2'>{selected.objetivo}</p>
+              <p className='mt-2'><strong>Fecha de creación:</strong> {new Date(selected.fecha_creacion).toLocaleString()}</p>
+              <p><strong>Última actualización:</strong> {new Date(selected.fecha_actualizacion).toLocaleString()}</p>
+              <div className='mt-4'>
+                <strong>Palabras clave:</strong>
+                <div className='flex flex-wrap gap-2 mt-2'>
+                  {selected.palabras_clave.map((palabra) => (
+                    <span key={palabra.id} className='bg-gray-200 rounded-full px-3 py-1 text-sm'>
+                      {palabra.palabra}
+                    </span>
+                  ))}
+                </div>
+              </div>
               <div className='mt-5 flex justify-end gap-4'>
                 <button className='bg-primary text-white px-4 py-2 rounded hover:bg-primary/80'>
                   Contactar
@@ -128,15 +147,14 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => { // Agrega la 
                 </button>
               </div>
             </div>
-          ) : null} {/* Eliminado el mensaje si no hay selección */}
+          ) : null}
         </div>
       </div>
 
-      {/* Mensaje de "No hay resultados" */}
       {totalPropuestas === 0 && (
-        <div className="flex flex-col items-center justify-center h-[20rem] w-full mt-4"> {/* Ajusta la altura al espacio de información detallada */}
-          <GiSharkFin className="text-8xl mb-4" /> {/* Aumenta aún más el tamaño del ícono */}
-          <p className='text-gray-400 text-3xl text-center'>No hay resultados</p> {/* Aumenta aún más el tamaño del texto y centra */}
+        <div className="flex flex-col items-center justify-center h-[20rem] w-full mt-4">
+          <GiSharkFin className="text-8xl mb-4" />
+          <p className='text-gray-400 text-3xl text-center'>No hay resultados</p>
         </div>
       )}
     </div>

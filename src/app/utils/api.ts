@@ -31,8 +31,9 @@ interface Propuesta {
   id: number;
   nombre: string;
   objetivo: string;
+  palabras_clave: { id: number; palabra: string }[];
   fecha_creacion: string;
-  // Agrega más campos según sea necesario
+  fecha_actualizacion: string;
 }
 
 
@@ -166,5 +167,29 @@ export const buscarProfesores = async (query: string): Promise<any[]> => {
     }
     console.error('Error no Axios:', error);
     throw error;
+  }
+};
+
+
+
+
+export const obtenerPropuestas = async (): Promise<Propuesta[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get<Propuesta[]>(`${API_URL}/propuestas/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las propuestas');
   }
 };
