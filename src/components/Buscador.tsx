@@ -4,17 +4,33 @@ import React, { useState } from 'react';
 import { BiSearchAlt } from 'react-icons/bi';
 import { MdOutlineCancel } from "react-icons/md";
 import { Propuesta } from '../utils/propuestas';
+import { buscarProfesores } from '../app/utils/api';
+
+interface Profesor {
+  id: number;
+  nombre: string;
+  email: string;
+  matricula: string;
+  materias: string;
+}
 
 interface BuscadorProps {
   onSearch: (term: string) => void;
 }
 
-const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => { // Agrega props para recibir la función de búsqueda
+const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   const [buscar, setBuscar] = useState("");
+  const [resultados, setResultados] = useState<Profesor[]>([]);
 
-  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSearch(buscar); // Llama a la función onSearch con el término de búsqueda
+    try {
+      const profesores = await buscarProfesores(buscar);
+      setResultados(profesores);
+    } catch (error) {
+      console.error('Error al buscar profesores:', error);
+      // Aquí puedes manejar el error, por ejemplo, mostrando un mensaje al usuario
+    }
   };
 
   return (
@@ -36,6 +52,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => { // Agrega props pa
           <button className='bg-oscure h-full p-5 px-10 rounded-xl text-white cursor-pointer hover:bg-primary'>Buscar</button>
         </div>
       </form>
+      
 
       <div className='secDiv flex items-center gap-10 justify-center'>
 
@@ -75,10 +92,20 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => { // Agrega props pa
 
         <span className='text-oscure cursor-pointer font-bold hover:text-help2'>Limpiar</span>
 
+
       </div>
 
-
-
+      {/* Resultados de la búsqueda */}
+      <div className='resultadosDiv'>
+        {resultados.map((profesor) => (
+          <div key={profesor.id} className='profesorCard bg-white p-4 rounded-lg shadow-md mb-4'>
+            <h3 className='text-lg font-bold'>{profesor.nombre}</h3>
+            <p>Email: {profesor.email}</p>
+            <p>Matrícula: {profesor.matricula}</p>
+            <p>Materias: {profesor.materias}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
