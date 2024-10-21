@@ -25,15 +25,31 @@ interface PropuestaData {
   cantidad_profesores: number;
   requisitos: string[];
   palabras_clave: string[];
+  areas: string[]; 
 }
 
 interface Propuesta {
   id: number;
   nombre: string;
   objetivo: string;
+  cantidad_alumnos: number;
+  cantidad_profesores: number;
+  requisitos: { id: number; descripcion: string }[];
   palabras_clave: { id: number; palabra: string }[];
+  areas: { id: number; nombre: string }[]; // Nuevo campo
+  carrera: string; // Nuevo campo
+  autor: {
+    nombre: string;
+    email: string;
+    tipo: 'alumno' | 'profesor';
+  };
   fecha_creacion: string;
   fecha_actualizacion: string;
+}
+
+interface Area {
+  id: number;
+  nombre: string;
 }
 
 
@@ -191,5 +207,26 @@ export const obtenerPropuestas = async (): Promise<Propuesta[]> => {
       throw error;
     }
     throw new Error('Error inesperado al obtener las propuestas');
+  }
+};
+
+export const obtenerAreas = async (): Promise<Area[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get<Area[]>(`${API_URL}/areas/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las áreas');
   }
 };

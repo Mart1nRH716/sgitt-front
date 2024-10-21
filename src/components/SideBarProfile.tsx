@@ -48,7 +48,7 @@ const SideBarProfile: React.FC<SideBarProfileProps> = ({ isCollapsed }) => {
           </li>
           <li>
             <Link href="/perfil/mispropuestas" className={isActive('/perfil/mispropuestas')}>
-              <IoMdPaper className='sidebar-menu-icon' /> {!isCollapsed && 'Propuestas'}
+              <IoMdPaper className='sidebar-menu-icon' /> {!isCollapsed && 'Mis Propuestas'}
             </Link>
           </li>
           <li>

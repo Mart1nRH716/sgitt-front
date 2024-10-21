@@ -10,6 +10,8 @@ interface Propuesta {
   nombre: string;
   objetivo: string;
   fecha_creacion: string;
+  areas: { id: number; nombre: string }[];
+  carrera: string; 
 }
 
 interface MisPropuestasProps {
@@ -96,14 +98,25 @@ const MisPropuestas: React.FC<MisPropuestasProps> = ({ isSidebarCollapsed }) => 
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {propuestas.map((propuesta) => (
-              <div key={propuesta.id} className="bg-white shadow-md rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-2">{propuesta.nombre}</h2>
-                <p className="text-gray-600 mb-4">{propuesta.objetivo}</p>
-                <p className="text-sm text-gray-500">Creada el: {new Date(propuesta.fecha_creacion).toLocaleDateString()}</p>
+          {propuestas.map((propuesta) => (
+            <div key={propuesta.id} className="bg-white shadow-md rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-2">{propuesta.nombre}</h2>
+              <p className="text-gray-600 mb-4">{propuesta.objetivo}</p>
+              <p className="text-sm text-gray-500">Creada el: {new Date(propuesta.fecha_creacion).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-500">Carrera: {propuesta.carrera}</p>
+              <div className="mt-2">
+                <p className="text-sm font-medium">Áreas de conocimiento:</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {propuesta.areas.map((area) => (
+                    <span key={area.id} className="text-xs bg-gray-200 rounded-full px-2 py-1">
+                      {area.nombre}
+                    </span>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
         )}
       </div>
     </div>

@@ -1,15 +1,15 @@
 // Buscador.tsx
-'use client'; // Esto marca el componente como Client Component
+'use client';
 import React, { useState } from 'react';
 import { BiSearchAlt } from 'react-icons/bi';
 import { MdOutlineCancel } from "react-icons/md";
-import { Propuesta } from '../utils/propuestas';
 import { buscarProfesores } from '../app/utils/api';
 
 interface Profesor {
   id: number;
-  nombre: string;
   email: string;
+  nombre: string;
+  apellido: string;
   matricula: string;
   materias: string;
 }
@@ -29,85 +29,54 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
       setResultados(profesores);
     } catch (error) {
       console.error('Error al buscar profesores:', error);
-      // Aquí puedes manejar el error, por ejemplo, mostrando un mensaje al usuario
     }
   };
 
+  const handleContactar = (profesor: Profesor) => {
+    console.log(`Contactando a ${profesor.nombre} ${profesor.apellido}`);
+  };
+
   return (
-    <div className='buscadorDiv grid gap-10 bg-secondary rounded-lg p-[3rem]'>
-      <form onSubmit={handleSearch}>
-        {/* Buscador */}
-        <div className='primerDiv flex justify-between items-center rounded-xl gap-2 p-5 shadow-sm shadow-oscure bg-white '>
+    <div className='buscadorDiv bg-secondary rounded-lg p-4 md:p-6 lg:p-[3rem] space-y-6 md:space-y-10'>
+      <form onSubmit={handleSearch} className='w-full'>
+        <div className='flex flex-col md:flex-row items-center rounded-xl gap-4 p-3 md:p-5 shadow-sm shadow-oscure bg-white'>
           <div className='flex gap-2 items-center w-full'>
             <BiSearchAlt className='text-xl icon' />
             <input 
               type="text" 
               className='bg-transparent text-oscure focus:outline-none w-full' 
-              placeholder='Busca una propuesta' 
-              value={buscar} // Vincula el valor del input al estado
-              onChange={(e) => setBuscar(e.target.value)} // Actualiza el estado al escribir
+              placeholder='Ingresa tu objetivo / idea de protocolo para recomendar profesores' 
+              value={buscar}
+              onChange={(e) => setBuscar(e.target.value)}
             />
-            <MdOutlineCancel className='text-xl icon text-red-500 hover:text-oscure mx-5' onClick={() => setBuscar('')} />
+            <MdOutlineCancel 
+              className='text-xl icon text-red-500 hover:text-oscure cursor-pointer' 
+              onClick={() => setBuscar('')} 
+            />
           </div>
-          <button className='bg-oscure h-full p-5 px-10 rounded-xl text-white cursor-pointer hover:bg-primary'>Buscar</button>
+          <button className='bg-oscure w-full md:w-auto py-2 px-4 md:px-10 rounded-xl text-white cursor-pointer hover:bg-primary transition-colors'>
+            Buscar
+          </button>
         </div>
       </form>
-      
 
-      <div className='secDiv flex items-center gap-10 justify-center'>
-
-        <div className='busquedaUnica flex items-center gap-2 '>
-          <label htmlFor="relevancia" className='text-oscure font-bold'>Ordenar: </label>
-          <select name="" id="relevancia" className='bg-white rounded-md px-4 py-1'>
-            <option value=""></option>
-            <option value="relevancia">Relevancia</option>
-            <option value="fecha">Fecha</option>
-            <option value="nombre">Nombre</option>
-          </select>
-        </div>
-      
-
-
-        <div className='busquedaUnica flex items-center gap-2 '>
-          <label htmlFor="area" className='text-oscure font-bold'>Áreas: </label>
-          <select name="" id="area" className='bg-white rounded-md px-4 py-1'>
-            <option value=""></option>
-            <option value="machine">Machine Learning</option>
-            <option value="web">Desarrollo Web</option>
-            <option value="mobile">Desarrollo Móvil</option>
-            <option value="design">Diseño</option>
-          </select>
-        </div>
-
-
-        <div className='busquedaUnica flex items-center gap-2 '>
-          <label htmlFor="carrera" className='text-oscure font-bold'>Carrera: </label>
-          <select name="" id="carrera" className='bg-white rounded-md px-4 py-1'>
-            <option value=""></option>  
-            <option value="datos">Ciencia de Datos</option>
-            <option value="sistemas">Sistemas Computacionales</option>
-            <option value="ia">Inteligencia Artificial</option>
-          </select>
-        </div>
-
-        <span className='text-oscure cursor-pointer font-bold hover:text-help2'>Limpiar</span>
-
-
-      </div>
-
-      {/* Resultados de la búsqueda */}
-      <div className='resultadosDiv'>
+      <div className='resultadosDiv grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {resultados.map((profesor) => (
-          <div key={profesor.id} className='profesorCard bg-white p-4 rounded-lg shadow-md mb-4'>
-            <h3 className='text-lg font-bold'>{profesor.nombre}</h3>
-            <p>Email: {profesor.email}</p>
-            <p>Matrícula: {profesor.matricula}</p>
+          <div key={profesor.id} className='profesorCard bg-white p-4 rounded-lg shadow-md'>
+            <h3 className='text-lg font-bold'>{`${profesor.nombre} ${profesor.apellido}`}</h3>
+            <p>Correo: {profesor.email}</p>
             <p>Materias: {profesor.materias}</p>
+            <button 
+              className='mt-4 bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors duration-300 w-full'
+              onClick={() => handleContactar(profesor)}
+            >
+              Contactar
+            </button>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export default Buscador
+export default Buscador;
