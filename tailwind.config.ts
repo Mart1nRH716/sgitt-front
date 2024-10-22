@@ -26,8 +26,13 @@ const config: Config = {
       },
     },
   },
+  daisyui: {
+    themes: ["light"], // Cambia el tema por defecto a 'light'
+  },
   plugins: [
     require('@tailwindcss/line-clamp'),
+    require("daisyui"),
   ],
 };
+
 export default config;
