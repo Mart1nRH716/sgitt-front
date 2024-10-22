@@ -5,12 +5,14 @@ import Footer from "@/components/Footer";
 
 const App = () =>{
   return (
-    <main className="w-[90%] m-auto">
+    <div>
+    
       <NabVar />
     <CrearPropuesta />
 
       <Footer />
-    </main>
+    </div>
+    
   );
 }
 export default App;

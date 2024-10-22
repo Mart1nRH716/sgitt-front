@@ -25,6 +25,31 @@ interface PropuestaData {
   cantidad_profesores: number;
   requisitos: string[];
   palabras_clave: string[];
+  areas: string[]; 
+}
+
+interface Propuesta {
+  id: number;
+  nombre: string;
+  objetivo: string;
+  cantidad_alumnos: number;
+  cantidad_profesores: number;
+  requisitos: { id: number; descripcion: string }[];
+  palabras_clave: { id: number; palabra: string }[];
+  areas: { id: number; nombre: string }[]; // Nuevo campo
+  carrera: string; // Nuevo campo
+  autor: {
+    nombre: string;
+    email: string;
+    tipo: 'alumno' | 'profesor';
+  };
+  fecha_creacion: string;
+  fecha_actualizacion: string;
+}
+
+interface Area {
+  id: number;
+  nombre: string;
 }
 
 
@@ -38,10 +63,12 @@ interface ApiResponse {
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
   try {
+    console.log('Datos enviados al servidor:', userData);
     const response = await axios.post<ApiResponse>(`${API_URL}/register/`, userData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      console.error('Error de respuesta:', error.response?.data);
       throw error.response?.data || error.message;
     }
     throw error;
@@ -109,5 +136,97 @@ export const verifyEmail = async (token: string): Promise<ApiResponse> => {
       throw error.response?.data || error.message;
     }
     throw error;
+  }
+};
+
+
+export const obtenerPropuestasUsuario = async (): Promise<Propuesta[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get<Propuesta[]>(`${API_URL}/propuestas/mis_propuestas/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // Propagamos el error de Axios para que sea manejado en el componente
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las propuestas');
+  }
+};
+
+export const buscarProfesores = async (query: string): Promise<any[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get(`${API_URL}/profesores/buscar/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      params: { q: query }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error de Axios:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    console.error('Error no Axios:', error);
+    throw error;
+  }
+};
+
+
+
+
+export const obtenerPropuestas = async (): Promise<Propuesta[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get<Propuesta[]>(`${API_URL}/propuestas/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las propuestas');
+  }
+};
+
+export const obtenerAreas = async (): Promise<Area[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get<Area[]>(`${API_URL}/areas/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las áreas');
   }
 };

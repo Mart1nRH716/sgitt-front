@@ -1,5 +1,7 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { FaHome } from "react-icons/fa";
 import { IoMdPaper } from "react-icons/io";
 import { FaBookmark } from "react-icons/fa";
@@ -11,15 +13,18 @@ interface SideBarProfileProps {
 }
 
 const SideBarProfile: React.FC<SideBarProfileProps> = ({ isCollapsed }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const pathname = usePathname();
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const isActive = (path: string) => {
+    if (path === '/perfil') {
+      return pathname === '/perfil' ? 'active' : '';
+    }
+    return pathname.startsWith(path) ? 'active' : '';
   };
 
   return (
-    <div className={`fixed top-16 transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40`} id='sidebar'>
-      <a href="#" className='p-4 flex items-center gap-4 hover:bg-help3'>
+    <div className={`fixed top-[64px] transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40`} id='sidebar'>
+      <Link href="/perfil" className='p-4 flex items-center gap-4 hover:bg-help3'>
         <img
           src="https://images.unsplash.com/photo-1726688837477-c8cbcab8e05a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw1fHx8ZW58MHx8fHx8"
           className='w-16 aspect-square object-cover rounded'
@@ -31,42 +36,35 @@ const SideBarProfile: React.FC<SideBarProfileProps> = ({ isCollapsed }) => {
             <span className='py-1 px-2 rounded-full bg-primary text-white text-sm font-medium'>Alumno</span>
           </div>
         )}
-      </a>
+      </Link>
 
       <div className='py-4'>
         <span className={`text-sm text-gray-500 uppercase ml-4 inline-block mb-2 ${isCollapsed ? 'hidden' : ''}`}>Menú</span>
         <ul className="sidebar-menu">
           <li>
-            <a href="#" className='active'>
+            <Link href="/perfil" className={isActive('/perfil')}>
               <FaHome className='sidebar-menu-icon' /> {!isCollapsed && 'Inicio'}
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#" onClick={toggleDropdown} className={isDropdownOpen ? 'active' : ''}>
-              <IoMdPaper className='sidebar-menu-icon' /> {!isCollapsed && 'Propuestas'}
-            </a>
-            {isDropdownOpen && !isCollapsed && (
-              <ul className='sidebar-dropdown ml-4 border-l border-primary'>
-                <li><a href="#">Sistemas Computacionales</a></li>
-                <li><a href="#">Inteligencia Artificial</a></li>
-                <li><a href="#">Ciencia de Datos</a></li>
-              </ul>
-            )}
+            <Link href="/perfil/mispropuestas" className={isActive('/perfil/mispropuestas')}>
+              <IoMdPaper className='sidebar-menu-icon' /> {!isCollapsed && 'Mis Propuestas'}
+            </Link>
           </li>
           <li>
-            <a href="#">
+            <Link href="/perfil/vermastardes">
               <FaBookmark className='sidebar-menu-icon' /> {!isCollapsed && 'Ver Más Tarde'}
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#">
+            <Link href="/perfil/configuracion">
               <GoGear className='sidebar-menu-icon' /> {!isCollapsed && 'Configuración'}
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#">
+            <Link href="/perfil/ayuda">
               <AiOutlineQuestionCircle className='sidebar-menu-icon' /> {!isCollapsed && 'Ayuda'}
-            </a>
+            </Link>
           </li>
         </ul>
       </div>
