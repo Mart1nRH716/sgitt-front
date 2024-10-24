@@ -1,17 +1,15 @@
 
-import NabVar from "@/components/NabVar";
+'use client';
+import React from 'react';
+import Layout from "@/components/Layout";
 import CrearPropuesta from "@/components/CrearPropuesta";
-import Footer from "@/components/Footer";
+
 
 const App = () =>{
   return (
-    <div>
-    
-      <NabVar />
-    <CrearPropuesta />
-
-      <Footer />
-    </div>
+    <Layout>
+      <CrearPropuesta />
+    </Layout>
     
   );
 }

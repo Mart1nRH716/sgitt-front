@@ -37,7 +37,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   };
 
   return (
-    <div className='buscadorDiv bg-secondary rounded-lg p-4 md:p-6 lg:p-[3rem] space-y-6 md:space-y-10'>
+    <div className='buscadorDiv bg-secondary rounded-lg p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8 mt-4'>
       <form onSubmit={handleSearch} className='w-full'>
         <div className='flex flex-col md:flex-row items-center rounded-xl gap-4 p-3 md:p-5 shadow-sm shadow-oscure bg-white'>
           <div className='flex gap-2 items-center w-full'>
