@@ -111,7 +111,7 @@ interface PropuestaForm {
   };
 
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-gray-100 p-4">
+      <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Crear Nueva Propuesta</h2>
         {error && (

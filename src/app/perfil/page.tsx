@@ -1,8 +1,7 @@
 // Perfil.tsx
 'use client';
 import React, { useState } from 'react';
-import NavBarProfile from '@/components/NavBarProfile';
-import SideBarProfile from '@/components/SideBarProfile';
+import Layout from '@/components/Layout';
 import MainProfile from '@/components/MainProfile';
 
 const Perfil = () => {
@@ -13,13 +12,13 @@ const Perfil = () => {
   };
 
   return (
-    <main className="m-auto">
-      <div>
-        <NavBarProfile toggleSidebar={toggleSidebar} />
-        <SideBarProfile isCollapsed={isSidebarCollapsed} />
-        <MainProfile isSidebarCollapsed={isSidebarCollapsed} />
+    <Layout>
+      <div className="max-w-7xl mx-auto">
+        
+      <MainProfile />
+        
       </div>
-    </main>
+    </Layout>
   );
 };
 

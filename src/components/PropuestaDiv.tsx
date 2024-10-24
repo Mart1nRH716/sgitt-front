@@ -126,7 +126,7 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
   };
 
   return (
-    <div className='flex flex-col items-center w-full'>
+    <div className='flex flex-col items-center w-full mt-6'>
       <div className='flex flex-wrap items-center gap-4 justify-center mb-6 bg-secondary p-4 rounded-lg w-full'>
         <div className='busquedaUnica flex items-center gap-2'>
           <label htmlFor="ordenar" className='text-oscure font-bold'>Ordenar: </label>
