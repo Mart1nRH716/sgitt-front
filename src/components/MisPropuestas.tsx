@@ -10,9 +10,21 @@ interface Propuesta {
   id: number;
   nombre: string;
   objetivo: string;
-  fecha_creacion: string;
+  cantidad_alumnos: number;
+  cantidad_profesores: number;
+  requisitos: { id: number; descripcion: string }[];
+  palabras_clave: { id: number; palabra: string }[];
   areas: { id: number; nombre: string }[];
-  carrera: string; 
+  carrera: string;
+  tipo_propuesta: string;
+  datos_contacto: { id: number; dato: string }[];
+  autor: {
+    nombre: string;
+    email: string;
+    tipo: 'alumno' | 'profesor';
+  };
+  fecha_creacion: string;
+  fecha_actualizacion: string;
 }
 
 
@@ -124,6 +136,18 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
                   {propuesta.areas.map((area) => (
                     <span key={area.id} className="text-xs bg-gray-200 rounded-full px-2 py-1">
                       {area.nombre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p><strong>Tipo de Propuesta:</strong> {propuesta.tipo_propuesta}</p>
+  
+              <div className='mt-4'>
+                <strong>Datos de Contacto:</strong>
+                <div className='flex flex-wrap gap-2 mt-2'>
+                  {propuesta.datos_contacto.map((dato) => (
+                    <span key={dato.id} className='bg-gray-200 rounded-full px-3 py-1 text-sm'>
+                      {dato.dato}
                     </span>
                   ))}
                 </div>

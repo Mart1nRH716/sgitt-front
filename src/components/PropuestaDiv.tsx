@@ -8,16 +8,21 @@ type PropuestaType = {
   id: number;
   nombre: string;
   objetivo: string;
+  cantidad_alumnos: number;
+  cantidad_profesores: number;
+  requisitos: { id: number; descripcion: string }[];
   palabras_clave: { id: number; palabra: string }[];
   areas: { id: number; nombre: string }[];
   carrera: string;
-  fecha_creacion: string;
-  fecha_actualizacion: string;
+  tipo_propuesta: string;
+  datos_contacto: { id: number; dato: string }[];
   autor: {
     nombre: string;
     email: string;
     tipo: 'alumno' | 'profesor';
   };
+  fecha_creacion: string;
+  fecha_actualizacion: string;
 };
 
 interface Area {
@@ -275,6 +280,30 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
               <p className='mt-2'><strong>Autor:</strong> {selected.autor.nombre} ({selected.autor.tipo})</p>
               <p><strong>Carrera:</strong> {selected.carrera}</p>
               <p><strong>Correo:</strong> {selected.autor.email}</p>
+              <p><strong>Tipo de Propuesta:</strong> {selected.tipo_propuesta}</p>
+              <p><strong>Numero de alumnos: </strong> {selected.cantidad_alumnos}</p>
+              <p><strong>Numero de profesores: </strong> {selected.cantidad_profesores}</p>
+
+              <div className='mt-4'>
+                <strong>Datos de Contacto:</strong>
+                <div className='flex flex-wrap gap-2 mt-2'>
+                  {selected.datos_contacto.map((dato) => (
+                    <span key={dato.id} className='bg-gray-200 rounded-full px-3 py-1 text-sm'>
+                      {dato.dato}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className='mt-4'>
+                <strong>Requisitos:</strong>
+                <ul className='list-disc list-inside mt-2'>
+                  {selected.requisitos.map((requisito) => (
+                    <li key={requisito.id}>{requisito.descripcion}</li>
+                  ))}
+                </ul>
+              </div>
+
               <div className='mt-4'>
                 <strong>Áreas de conocimiento:</strong>
                 <div className='flex flex-wrap gap-2 mt-2'>
@@ -299,8 +328,8 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
                 <button className='bg-primary text-white px-4 py-2 rounded hover:bg-primary/80'>
                   Contactar
                 </button>
-                <button className='bg-help2 text-white px-4 py-2 rounded hover:bg-help2/80'>
-                  Reportar
+                <button className='bg-secondary text-white px-4 py-2 rounded hover:bg-secondary/80'>
+                  Guardar
                 </button>
               </div>
             </div>

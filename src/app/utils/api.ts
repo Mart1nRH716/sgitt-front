@@ -25,9 +25,12 @@ interface PropuestaData {
   cantidad_profesores: number;
   requisitos: string[];
   palabras_clave: string[];
-  areas: string[]; 
+  areas: string[];
+  tipo_propuesta: string;
+  datos_contacto: string[];
 }
 
+// En Propuesta
 interface Propuesta {
   id: number;
   nombre: string;
@@ -36,8 +39,10 @@ interface Propuesta {
   cantidad_profesores: number;
   requisitos: { id: number; descripcion: string }[];
   palabras_clave: { id: number; palabra: string }[];
-  areas: { id: number; nombre: string }[]; // Nuevo campo
-  carrera: string; // Nuevo campo
+  areas: { id: number; nombre: string }[];
+  carrera: string;
+  tipo_propuesta: string;
+  datos_contacto: { id: number; dato: string }[];
   autor: {
     nombre: string;
     email: string;
@@ -96,6 +101,7 @@ interface ApiResponse {
   refresh: string;
   access: string;
   user_type: string;
+  user_email: string;
 }
 
 export const crearPropuesta = async (propuestaData: PropuestaData): Promise<ApiResponse> => {

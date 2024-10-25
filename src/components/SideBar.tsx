@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React,  { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FaHome, FaUser } from "react-icons/fa";
@@ -14,6 +14,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const pathname = usePathname();
+  const [userType, setUserType] = useState('Usuario');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserType(localStorage.getItem('user-Type') || 'Usuario');
+    }
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/home') {
@@ -34,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
           <div className='whitespace-nowrap sidebar-user-profile'>
             <h3 className='text-lg font-semibold mb-2'>Mi Perfil</h3>
             <span className='py-1 px-2 rounded-full bg-primary text-white text-sm font-medium'>
-              {localStorage.getItem('userType') || 'Usuario'}
+            {userType}
             </span>
           </div>
         )}
