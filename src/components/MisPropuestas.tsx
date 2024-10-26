@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { obtenerPropuestasUsuario } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Plus } from 'lucide-react';
+import { Plus , Edit2 } from 'lucide-react';
+import EditarPropuestaModal from './EditarPropuestaModal';
 
 interface Propuesta {
   id: number;
@@ -36,6 +37,7 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   const router = useRouter();
+  const [propuestaEditar, setPropuestaEditar] = useState<Propuesta | null>(null);
 
   useEffect(() => {
     const fetchPropuestas = async () => {
@@ -64,6 +66,15 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
 
   const handleLoginRedirect = () => {
     router.push('/login');
+  };
+
+  const recargarPropuestas = async () => {
+    try {
+      const data = await obtenerPropuestasUsuario();
+      setPropuestas(data);
+    } catch (err) {
+      console.error('Error al recargar propuestas:', err);
+    }
   };
 
   if (isLoading) {
@@ -125,23 +136,24 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
         {/* Propuestas existentes */}
         {propuestas.map((propuesta) => (
           <div key={propuesta.id} className="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 min-h-[250px] flex flex-col">
+          <div className="flex justify-between items-start">
             <h2 className="text-xl font-semibold mb-2">{propuesta.nombre}</h2>
+            <button
+              onClick={() => setPropuestaEditar(propuesta)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Editar propuesta"
+            >
+              <Edit2 className="w-5 h-5 text-gray-600 hover:text-primary" />
+            </button>
+          </div>
             <p className="text-gray-600 mb-4 flex-grow">{propuesta.objetivo}</p>
             <div className="mt-auto">
               <p className="text-sm text-gray-500">Creada el: {new Date(propuesta.fecha_creacion).toLocaleDateString()}</p>
               <p className="text-sm text-gray-500">Carrera: {propuesta.carrera}</p>
-              <div className="mt-2">
-                <p className="text-sm font-medium">Áreas de conocimiento:</p>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {propuesta.areas.map((area) => (
-                    <span key={area.id} className="text-xs bg-gray-200 rounded-full px-2 py-1">
-                      {area.nombre}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <p><strong>Tipo de Propuesta:</strong> {propuesta.tipo_propuesta}</p>
-  
+              <p><strong>Numero de alumnos: </strong> {propuesta.cantidad_alumnos}</p>
+              <p><strong>Numero de profesores: </strong> {propuesta.cantidad_profesores}</p>
+              <p><strong>Tipo de propuesta: </strong> {propuesta.tipo_propuesta}</p>
+
               <div className='mt-4'>
                 <strong>Datos de Contacto:</strong>
                 <div className='flex flex-wrap gap-2 mt-2'>
@@ -152,9 +164,47 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
                   ))}
                 </div>
               </div>
+
+              <div className='mt-4'>
+                <strong>Requisitos:</strong>
+                <ul className='list-disc list-inside mt-2'>
+                  {propuesta.requisitos.map((requisito) => (
+                    <li key={requisito.id}>{requisito.descripcion}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className='mt-4'>
+                <strong>Áreas de conocimiento:</strong>
+                <div className='flex flex-wrap gap-2 mt-2'>
+                  {propuesta.areas.map((area) => (
+                    <span key={area.id} className='bg-gray-200 rounded-full px-3 py-1 text-sm'>
+                      {area.nombre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className='mt-4'>
+                <strong>Palabras clave:</strong>
+                <div className='flex flex-wrap gap-2 mt-2'>
+                  {propuesta.palabras_clave.map((palabra) => (
+                    <span key={palabra.id} className='bg-gray-200 rounded-full px-3 py-1 text-sm'>
+                      {palabra.palabra}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
             </div>
           </div>
         ))}
+        {propuestaEditar && (
+            <EditarPropuestaModal
+              propuesta={propuestaEditar}
+              onClose={() => setPropuestaEditar(null)}
+              onUpdate={recargarPropuestas}
+            />
+          )}
       </div>
   
       {propuestas.length === 0 && (
