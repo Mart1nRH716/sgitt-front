@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     <div className={`fixed top-[64px] transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40`} id='sidebar'>
       <Link href="/perfil" className='p-4 flex items-center gap-4 hover:bg-help3'>
         <img
-          src="/api/placeholder/64/64"
+          src="https://images.unsplash.com/photo-1729731321992-5fdb6568816a?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           className='w-16 aspect-square object-cover rounded'
           alt="Perfil"
         />

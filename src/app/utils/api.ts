@@ -11,6 +11,8 @@ interface UserData {
   carrera: string;
   plan_estudios: string;
   password: string;
+  areas_ids: number[];
+  areas_custom: string[];
 }
 
 interface Credentials {
@@ -287,3 +289,15 @@ export const eliminarPropuesta = async (id: number): Promise<void> => {
     throw error;
   }
 };
+
+export const obtenerMaterias = async (): Promise<any[]> => {
+  try {
+    const response = await axios.get<any[]>(`${API_URL}/materias/`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error;
+    }
+    throw new Error('Error inesperado al obtener las materias');
+  }
+}
