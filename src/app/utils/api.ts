@@ -265,3 +265,25 @@ export const actualizarPropuesta = async (id: number, propuestaData: PropuestaDa
     throw error;
   }
 };
+
+
+export const eliminarPropuesta = async (id: number): Promise<void> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    await axios.delete(`${API_URL}/propuestas/${id}/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error de Axios:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    throw error;
+  }
+};
