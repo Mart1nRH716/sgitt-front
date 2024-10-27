@@ -22,10 +22,15 @@ const Login: React.FC = () => {
     try {
       const response = await login(credentials);
       console.log(response);
-      
+      //print response
+      console.log(response.access);
+      console.log(response.user_email);
+
       // Save tokens to localStorage
       localStorage.setItem('refreshToken', response.refresh);
       localStorage.setItem('accessToken', response.access);
+      localStorage.setItem('userEmail', response.user_email);
+      localStorage.setItem('user-Type', response.user_type);
       
       // Redirect to dashboard
       window.location.href = '/home';

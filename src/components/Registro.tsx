@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { register } from '../app/utils/api';
+import { register ,obtenerMaterias  } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
+
+interface Area {
+  id: number;
+  nombre: string;
+}
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -15,18 +20,43 @@ const Register: React.FC = () => {
     plan_estudios: '',
     password: '',
     confirmPassword: '',
+    areas_ids: [] as number[],
+    areas_custom: [] as string[]
   });
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [customArea, setCustomArea] = useState('');
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [areaError, setAreaError] = useState('');
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [showCustomAreaPopup, setShowCustomAreaPopup] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const areasData = await obtenerMaterias();
+        setAreas(areasData);
+      } catch (error) {
+        console.error('Error al cargar áreas:', error);
+      }
+    };
+    fetchAreas();
+  }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    setAreaError('');
     
     if (formData.password !== formData.confirmPassword) {
       setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    const totalAreas = formData.areas_ids.length + formData.areas_custom.length;
+    if (totalAreas < 3) {
+      setAreaError('Debes seleccionar o agregar al menos 3 áreas de conocimiento');
       return;
     }
 
@@ -47,6 +77,48 @@ const Register: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prevData => ({ ...prevData, [name]: value }));
   }, []);
+
+  const handleAreaChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === 'other') {
+      setShowCustomAreaPopup(true);
+      e.target.value = ''; // Reset select value
+      return;
+    }
+    
+    const areaId = parseInt(value);
+    if (!formData.areas_ids.includes(areaId)) {
+      setFormData(prevData => ({
+        ...prevData,
+        areas_ids: [...prevData.areas_ids, areaId]
+      }));
+    }
+  }, [formData.areas_ids]);
+
+  const handleAddCustomArea = () => {
+    if (customArea.trim() && !formData.areas_custom.includes(customArea.trim())) {
+      setFormData(prevData => ({
+        ...prevData,
+        areas_custom: [...prevData.areas_custom, customArea.trim()]
+      }));
+      setCustomArea('');
+      setShowCustomAreaPopup(false);
+    }
+  };
+
+  const removeArea = (id: number) => {
+    setFormData(prevData => ({
+      ...prevData,
+      areas_ids: prevData.areas_ids.filter(areaId => areaId !== id)
+    }));
+  };
+
+  const removeCustomArea = (area: string) => {
+    setFormData(prevData => ({
+      ...prevData,
+      areas_custom: prevData.areas_custom.filter(customArea => customArea !== area)
+    }));
+  };
 
   useEffect(() => {
     if (formData.password === formData.confirmPassword) {
@@ -193,6 +265,92 @@ const Register: React.FC = () => {
               <option value="2020">2020</option>
             </select>
           </div>
+          <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Áreas de conocimiento (mínimo 3)
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
+                onChange={handleAreaChange}
+                value=""
+              >
+                <option value="">Selecciona un área</option>
+                <option value="other">Otra área...</option>
+                {areas.map(area => (
+                  <option key={area.id} value={area.id}>{area.nombre}</option>
+                ))}
+              </select>
+
+              {/* Popup para área personalizada */}
+              {showCustomAreaPopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                    <h3 className="text-lg font-semibold mb-4">Agregar área personalizada</h3>
+                    <input
+                      type="text"
+                      value={customArea}
+                      onChange={(e) => setCustomArea(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+                      placeholder="Ingresa el nombre del área"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCustomAreaPopup(false);
+                          setCustomArea('');
+                        }}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddCustomArea}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mostrar áreas seleccionadas */}
+              <div className="space-y-2">
+                {formData.areas_ids.map(areaId => {
+                  const area = areas.find(a => a.id === areaId);
+                  return area ? (
+                    <div key={area.id} className="flex items-center justify-between bg-blue-50 p-2 rounded">
+                      <span>{area.nombre}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeArea(area.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : null;
+                })}
+                {formData.areas_custom.map(area => (
+                  <div key={area} className="flex items-center justify-between bg-blue-50 p-2 rounded">
+                    <span>{area}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeCustomArea(area)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {areaError && (
+                <p className="text-red-500 text-sm mt-1">{areaError}</p>
+              )}
+            </div>
           {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                   <span className="block sm:inline">{error}</span>

@@ -6,18 +6,21 @@ import { crearPropuesta } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
 
 interface PropuestaForm {
-    nombre: string;
-    objetivo: string;
-    cantidad_alumnos: number;
-    cantidad_profesores: number;
-    requisitos: string[];
-    palabras_clave: string[];
-    areas: string[];
-  }
+  nombre: string;
+  objetivo: string;
+  cantidad_alumnos: number;
+  cantidad_profesores: number;
+  requisitos: string[];
+  palabras_clave: string[];
+  areas: string[];
+  tipo_propuesta: string;
+  datos_contacto: string[];
+}
   
   const CrearPropuesta: React.FC = () => {
     const router = useRouter();
     const [success, setSuccess] = useState(false);
+    const [nuevoDatoContacto, setNuevoDatoContacto] = useState('');
 
     const [propuesta, setPropuesta] = useState<PropuestaForm>({
       nombre: '',
@@ -27,7 +30,10 @@ interface PropuestaForm {
       requisitos: [],
       palabras_clave: [],
       areas: [],
+      tipo_propuesta: '',
+      datos_contacto: [localStorage.getItem('userEmail') || ''], // Email del usuario por defecto
     });
+
     const [nuevoRequisito, setNuevoRequisito] = useState('');
     const [nuevaPalabraClave, setNuevaPalabraClave] = useState('');
     const [error, setError] = useState('');
@@ -37,6 +43,26 @@ interface PropuestaForm {
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
       setPropuesta(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddDatoContacto = () => {
+      if (nuevoDatoContacto.trim() !== '') {
+        setPropuesta(prev => ({
+          ...prev,
+          datos_contacto: [...prev.datos_contacto, nuevoDatoContacto.trim()]
+        }));
+        setNuevoDatoContacto('');
+      }
+    };
+
+    const handleRemoveDatoContacto = (index: number) => {
+      // No permitir eliminar el email por defecto (índice 0)
+      if (index === 0) return;
+      
+      setPropuesta(prev => ({
+        ...prev,
+        datos_contacto: prev.datos_contacto.filter((_, i) => i !== index)
+      }));
     };
   
     const handleAddRequisito = () => {
@@ -177,6 +203,23 @@ interface PropuestaForm {
               />
             </div>
           </div>
+          
+          <div>
+            <label htmlFor="tipo_propuesta" className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo de Propuesta
+            </label>
+            <input
+              id="tipo_propuesta"
+              name="tipo_propuesta"
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={propuesta.tipo_propuesta}
+              onChange={handleChange}
+              placeholder="Ej: TT1, Recursamiento, etc."
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Requisitos</label>
             <div className="flex space-x-2 mb-2">
@@ -276,6 +319,43 @@ interface PropuestaForm {
               ))}
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Datos de Contacto</label>
+            <div className="flex space-x-2 mb-2">
+              <input
+                type="text"
+                value={nuevoDatoContacto}
+                onChange={(e) => setNuevoDatoContacto(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Nuevo dato de contacto"
+              />
+              <button
+                type="button"
+                onClick={handleAddDatoContacto}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <PlusCircle size={20} />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {propuesta.datos_contacto.map((dato, index) => (
+                <div key={index} className="flex items-center space-x-2 bg-gray-100 p-2 rounded-md">
+                  <span className="flex-1">{dato}</span>
+                  {index !== 0 && ( // Solo mostrar el botón de eliminar si no es el email por defecto
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDatoContacto(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <button
             type="submit"
             className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"

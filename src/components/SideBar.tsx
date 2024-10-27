@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React,  { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FaHome, FaUser } from "react-icons/fa";
@@ -14,6 +14,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const pathname = usePathname();
+  const [userType, setUserType] = useState('Usuario');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setUserType(localStorage.getItem('user-Type') || 'Usuario');
+    }
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/home') {
@@ -26,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     <div className={`fixed top-[64px] transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40`} id='sidebar'>
       <Link href="/perfil" className='p-4 flex items-center gap-4 hover:bg-help3'>
         <img
-          src="/api/placeholder/64/64"
+          src="https://images.unsplash.com/photo-1729731321992-5fdb6568816a?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           className='w-16 aspect-square object-cover rounded'
           alt="Perfil"
         />
@@ -34,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
           <div className='whitespace-nowrap sidebar-user-profile'>
             <h3 className='text-lg font-semibold mb-2'>Mi Perfil</h3>
             <span className='py-1 px-2 rounded-full bg-primary text-white text-sm font-medium'>
-              {localStorage.getItem('userType') || 'Usuario'}
+            {userType}
             </span>
           </div>
         )}
