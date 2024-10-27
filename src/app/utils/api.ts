@@ -70,8 +70,14 @@ interface ApiResponse {
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
   try {
-    console.log('Datos enviados al servidor:', userData);
-    const response = await axios.post<ApiResponse>(`${API_URL}/register/`, userData);
+
+    const dataToSend = {
+      ...userData,
+      areas_custom: userData.areas_custom || [],
+    };
+
+    console.log('Datos enviados al servidor:', dataToSend);
+    const response = await axios.post<ApiResponse>(`${API_URL}/register/`, dataToSend);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -301,3 +307,55 @@ export const obtenerMaterias = async (): Promise<any[]> => {
     throw new Error('Error inesperado al obtener las materias');
   }
 }
+
+
+
+export const obtenerPerfilAlumno = async () => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get(`${API_URL}/alumnos/perfil/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+      }
+      throw new Error(error.response?.data?.message || 'Error al obtener el perfil');
+    }
+    throw new Error('Error inesperado al obtener el perfil');
+  }
+};
+
+
+
+export const obtenerPerfilProfesor = async () => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get(`${API_URL}/profesores/perfil/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+      }
+      throw new Error(error.response?.data?.message || 'Error al obtener el perfil');
+    }
+    throw new Error('Error inesperado al obtener el perfil');
+  }
+};
