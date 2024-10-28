@@ -1,4 +1,3 @@
-// src/components/Chat/ConversationList.tsx
 import React, { useState, useEffect } from 'react';
 import { UserCircle2, Users } from 'lucide-react';
 import axios from 'axios';
@@ -25,6 +24,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wsNotifications, setWsNotifications] = useState<WebSocket | null>(null);
 
   const fetchConversations = async () => {
     try {
@@ -48,10 +48,71 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
   useEffect(() => {
     fetchConversations();
-    // Configurar un intervalo para actualizar las conversaciones cada 10 segundos
-    const interval = setInterval(fetchConversations, 10000);
-    return () => clearInterval(interval);
+
+    // Configurar WebSocket para notificaciones
+    const wsUrl = `ws://localhost:8000/ws/notifications/`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('Connected to notifications WebSocket');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'unread_count_update') {
+        setConversations(prevConversations =>
+          prevConversations.map(conv =>
+            conv.id === data.conversation_id
+              ? { ...conv, unread_count: data.unread_count }
+              : conv
+          )
+        );
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    setWsNotifications(ws);
+
+    // Actualizar conversaciones periódicamente cuando la ventana está activa
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchConversations();
+      }
+    }, 30000); // cada 30 segundos
+
+    // Listener para cambios de visibilidad
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchConversations();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (wsNotifications) {
+        wsNotifications.close();
+      }
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
+
+  // Actualizar contadores cuando se selecciona una conversación
+  useEffect(() => {
+    if (selectedConversation) {
+      setConversations(prevConversations =>
+        prevConversations.map(conv =>
+          conv.id === selectedConversation.id
+            ? { ...conv, unread_count: 0 }
+            : conv
+        )
+      );
+    }
+  }, [selectedConversation]);
 
   if (isLoading) {
     return (
@@ -73,7 +134,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
     <div className="w-full h-full flex flex-col bg-white">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-xl font-semibold">Messages</h2>
+        <h2 className="text-xl font-semibold">Mensajes</h2>
         <button className="p-2 hover:bg-gray-100 rounded-full">
           <Users className="w-5 h-5" />
         </button>

@@ -5,6 +5,7 @@ import ConversationList from '@/components/Chat/ConversationList';
 import ChatRoom from '@/components/Chat/ChatRoom';
 import CreateChatDialog from '@/components/Chat/CreateChatDialog';
 import { Plus } from 'lucide-react';
+import Link from 'next/link';
 
 interface Conversation {
   id: number;
@@ -32,11 +33,16 @@ const ChatPage = () => {
         {/* Sidebar */}
         <div className="w-80 bg-white border-r flex flex-col">
           {/* Sidebar Header */}
-          <div className="p-4 border-b flex justify-between items-center bg-white">
-            <h1 className="text-xl font-semibold">Chats</h1>
+          <div className="p-4 border-b flex items-center bg-white">
+            <Link href="/home" className="flex items-center gap-2 hover:opacity-80">
+              <h1 className="text-xl font-bold text-oscure">
+                SGI<span className="text-secondary">TT</span>
+              </h1>
+            </Link>
+            <h1 className="text-xl font-semibold ml-2">| Chat</h1>
             <button
               onClick={() => setIsCreateDialogOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="ml-auto p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="Nueva conversación"
             >
               <Plus className="w-5 h-5" />

@@ -50,7 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
         </form>
 
         <div className='flex items-center gap-4 ml-auto'>
-          <Link href="/mensajes" className='relative text-secondary hover:text-primary transition-colors'>
+          <Link href="/chat" className='relative text-secondary hover:text-primary transition-colors'>
             <AiOutlineMessage className='text-2xl' />
             <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-help2'></span>
           </Link>

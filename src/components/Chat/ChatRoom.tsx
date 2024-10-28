@@ -1,4 +1,3 @@
-// src/components/Chat/ChatRoom.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -9,6 +8,7 @@ interface Message {
   sender_email: string;
   sender_name: string;
   timestamp: string;
+  read_by: Array<{ id: number; email: string }>;
 }
 
 interface ChatRoomProps {
@@ -26,6 +26,31 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const router = useRouter();
+  const currentUserEmail = localStorage.getItem('userEmail');
+
+  const markMessageAsRead = async (messageId: number) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      await axios.post(
+        `http://localhost:8000/api/chat/messages/${messageId}/mark_as_read/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  };
+
+  const markAllMessagesAsRead = async (messages: Message[]) => {
+    const unreadMessages = messages.filter(message => 
+      message.sender_email !== currentUserEmail &&
+      !message.read_by.some(user => user.email === currentUserEmail)
+    );
+
+    for (const message of unreadMessages) {
+      await markMessageAsRead(message.id);
+    }
+  };
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -38,12 +63,22 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setMessages(response.data);
+        await markAllMessagesAsRead(response.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
       }
     };
 
     fetchMessages();
+    
+    // Configurar un intervalo para verificar y marcar mensajes como leídos
+    const checkInterval = setInterval(() => {
+      if (document.visibilityState === 'visible' && messages.length > 0) {
+        markAllMessagesAsRead(messages);
+      }
+    }, 5000);
+
+    return () => clearInterval(checkInterval);
   }, [conversation]);
 
   useEffect(() => {
@@ -61,10 +96,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
       console.log('Connected to WebSocket');
     };
 
-    websocket.onmessage = (event) => {
+    websocket.onmessage = async (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'message') {
-        setMessages(prev => [...prev, data.message]);
+        const newMessage = data.message;
+        setMessages(prev => [...prev, newMessage]);
+        
+        // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
+        if (newMessage.sender_email !== currentUserEmail && 
+            document.visibilityState === 'visible') {
+          await markMessageAsRead(newMessage.id);
+        }
       }
     };
 
@@ -77,7 +119,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
     return () => {
       websocket.close();
     };
-  }, [conversation, router]);
+  }, [conversation, router, currentUserEmail]);
+
+  // Agregar listener para el evento de visibilidad del documento
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && messages.length > 0) {
+        markAllMessagesAsRead(messages);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,8 +155,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         user_id: userId
       }));
 
-      // También guardar en la base de datos a través de la API
-      await axios.post(
+      // Guardar en la base de datos y obtener la respuesta
+      const response = await axios.post(
         'http://localhost:8000/api/chat/messages/',
         {
           content: newMessage,
@@ -113,6 +167,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         }
       );
 
+      // Actualizar el estado local con el nuevo mensaje
+      setMessages(prev => [...prev, response.data]);
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
