@@ -2,6 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { LuPencilLine } from "react-icons/lu";
 import { obtenerPerfilAlumno, obtenerPerfilProfesor } from '../app/utils/api';
+import EditarPerfilModal from './EditarPerfilModal';
+import alumnoIcono from '../utils/alumno_icono.png';
+import profesorIcono from '../utils/profesor_icono.png';
+import Image from 'next/image';
+
 
 // Mantener las mismas interfaces
 interface BaseUserData {
@@ -23,6 +28,9 @@ interface AlumnoData extends BaseUserData {
 
 interface ProfesorData extends BaseUserData {
   materias: Array<{id: number, nombre: string}>;
+  areas_profesor: Array<{id: number, nombre: string}>; 
+  apellido_materno: string; 
+  apellido_paterno: string;
   es_profesor: boolean;
 }
 
@@ -31,6 +39,37 @@ const MainProfile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userType, setUserType] = useState<'alumno' | 'profesor' | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const fetchUserData = async () => {
+        try {
+            const storedUserType = localStorage.getItem('user-Type');
+            setUserType(storedUserType as 'alumno' | 'profesor');
+
+            if (!storedUserType) {
+                throw new Error('Tipo de usuario no encontrado');
+            }
+
+            const data = storedUserType === 'alumno' 
+                ? await obtenerPerfilAlumno()
+                : await obtenerPerfilProfesor();
+            
+            setUserData(data);
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Error al cargar los datos del usuario');
+            }
+            console.error('Error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUserData();
+    }, []);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -144,20 +183,41 @@ const MainProfile = () => {
                                 <h3 className="font-semibold text-gray-700 mb-4">Datos Básicos</h3>
                                 <div className="space-y-2">
                                     <p><strong>Nombre:</strong> {profesorData.nombre}</p>
-                                    <p><strong>Apellido:</strong> {profesorData.apellido}</p>
+                                    <p><strong>Apellido Paterno:</strong> {profesorData.apellido_paterno}</p>
+                                    <p><strong>Apellido Materno:</strong> {profesorData.apellido_materno}</p>
                                     <p><strong>Email:</strong> {profesorData.email}</p>
                                 </div>
                             </div>
-
+        
                             <div className="bg-gray-50 p-4 rounded-lg">
                                 <h3 className="font-semibold text-gray-700 mb-4">Materias Impartidas</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {profesorData.materias.map((materia) => (
-                                        <span key={materia.id} className="px-4 py-2 bg-green-100 text-green-800 rounded-full">
-                                            {materia.nombre}
-                                        </span>
-                                    ))}
+                                    {profesorData.materias && profesorData.materias.length > 0 ? (
+                                        profesorData.materias.map((materia) => (
+                                            <span key={materia.id} className="px-4 py-2 bg-green-100 text-green-800 rounded-full">
+                                                {materia.nombre}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <p className="text-gray-500">No hay materias registradas</p>
+                                    )}
                                 </div>
+                            </div>
+                        </div>
+        
+                        {/* Nueva sección para áreas de conocimiento */}
+                        <div className="mt-8">
+                            <h3 className="font-semibold text-gray-700 mb-4">Áreas de Conocimiento</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {profesorData.areas_profesor && profesorData.areas_profesor.length > 0 ? (
+                                    profesorData.areas_profesor.map((area) => (
+                                        <span key={area.id} className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full">
+                                            {area.nombre}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500">No hay áreas de conocimiento registradas</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -168,40 +228,47 @@ const MainProfile = () => {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="relative mb-8">
-                <img 
-                    src="https://images.unsplash.com/photo-1606942040878-9a852c5045a3?q=80&w=1170&auto=format&fit=crop"
-                    className="w-full h-72 object-cover rounded-lg"
-                    alt="Cover"
-                />
-                <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-help3 hover:bg-help1 flex items-center justify-center transition-colors">
-                    <LuPencilLine />
-                </button>
-            </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-8 mb-8">
-                <img
-                    src="https://plus.unsplash.com/premium_photo-1693723595870-2b8bad09b4c2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjF8fGF6dWx8ZW58MHx8MHx8fDA%3D"
+                <Image
+                    src={userType === 'alumno' ? alumnoIcono : profesorIcono}
                     alt="Perfil"
                     className="w-28 h-28 object-cover rounded-full"
                 />
                 <div className="flex-grow">
                     <h2 className="text-2xl font-semibold mb-2">
                         {userData && (userType === 'alumno' 
-                            ? `${(userData as AlumnoData).nombre} ${(userData as AlumnoData).apellido_paterno}`
-                            : `${(userData as ProfesorData).nombre} ${(userData as ProfesorData).apellido}`
+                            ? `${(userData as AlumnoData).nombre} ${(userData as AlumnoData).apellido_paterno} ${(userData as AlumnoData).apellido_materno}`
+                            : `${(userData as ProfesorData).nombre} ${(userData as ProfesorData).apellido_paterno} ${(userData as ProfesorData).apellido_materno}`
                         )}
                     </h2>
                     <span className="text-lg text-gray-500 capitalize">{userType}</span>
                 </div>
-                <button className="py-2 px-4 rounded bg-secondary hover:bg-primary transition-colors text-white flex items-center gap-2">
-                    <LuPencilLine /> Editar Perfil
+                <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="py-2 px-4 rounded bg-secondary hover:bg-primary transition-colors text-white flex items-center gap-2"
+                >
+                <LuPencilLine /> Editar Perfil
                 </button>
             </div>
 
             {renderUserProfile()}
+            {/* Modal de edición */}
+            {userData && userType && (
+                <EditarPerfilModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onUpdate={fetchUserData}
+                    userType={userType}
+                    currentData={userData}
+                />
+            )}
         </div>
-    );
+
+        
+    );  
+    
+   
 };
 
 export default MainProfile;

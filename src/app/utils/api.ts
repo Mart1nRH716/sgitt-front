@@ -176,6 +176,23 @@ export const obtenerPropuestasUsuario = async (): Promise<Propuesta[]> => {
   }
 };
 
+interface Profesor {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  materias: Array<{
+    id: number;
+    nombre: string;
+  }>;
+  areas_profesor: Array<{
+    id: number;
+    nombre: string;
+  }>;
+  es_profesor: boolean;
+}
+
 export const buscarProfesores = async (query: string): Promise<any[]> => {
   try {
     const token = localStorage.getItem('accessToken');
@@ -357,5 +374,64 @@ export const obtenerPerfilProfesor = async () => {
       throw new Error(error.response?.data?.message || 'Error al obtener el perfil');
     }
     throw new Error('Error inesperado al obtener el perfil');
+  }
+};
+
+
+
+interface ActualizarPerfilData {
+  areas_ids?: number[];
+  materias_ids?: number[];
+}
+
+export const actualizarPerfilAlumno = async (data: ActualizarPerfilData) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    console.log('Data:', data);
+    const response = await axios.patch(
+      `${API_URL}/alumnos/perfil/`,
+      data,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Error al actualizar el perfil');
+    }
+    throw new Error('Error inesperado al actualizar el perfil');
+  }
+};
+
+export const actualizarPerfilProfesor = async (data: ActualizarPerfilData) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    console.log('Data:', data);
+    const response = await axios.patch(
+      `${API_URL}/profesores/perfil/`,
+      data,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Error al actualizar el perfil');
+    }
+    throw new Error('Error inesperado al actualizar el perfil');
   }
 };

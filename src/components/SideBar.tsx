@@ -6,7 +6,13 @@ import { FaHome, FaUser } from "react-icons/fa";
 import { IoMdPaper } from "react-icons/io";
 import { FaBookmark } from "react-icons/fa";
 import { GoGear } from "react-icons/go";
-import { AiOutlineQuestionCircle } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser,AiOutlineQuestionCircle } from "react-icons/ai";
+import { BiLogOut } from "react-icons/bi";
+import Image from 'next/image';
+import alumnoIcono from '../utils/alumno_icono.png';
+import profesorIcono from '../utils/profesor_icono.png';
+
+
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -15,10 +21,12 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const pathname = usePathname();
   const [userType, setUserType] = useState('Usuario');
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setUserType(localStorage.getItem('user-Type') || 'Usuario');
+      setUserEmail(localStorage.getItem('userEmail') || '');
     }
   }, []);
 
@@ -32,16 +40,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   return (
     <div className={`fixed top-[64px] transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40`} id='sidebar'>
       <Link href="/perfil" className='p-4 flex items-center gap-4 hover:bg-help3'>
-        <img
-          src="https://images.unsplash.com/photo-1729731321992-5fdb6568816a?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      
+
+        <Image
+          src={userType === 'alumno' ? alumnoIcono : profesorIcono}
           className='w-16 aspect-square object-cover rounded'
           alt="Perfil"
         />
         {!isCollapsed && (
-          <div className='whitespace-nowrap sidebar-user-profile'>
-            <h3 className='text-lg font-semibold mb-2'>Mi Perfil</h3>
-            <span className='py-1 px-2 rounded-full bg-primary text-white text-sm font-medium'>
-            {userType}
+          <div className='sidebar-user-profile w-full'>
+            <p className="text-[10px] font-medium mb-1 truncate max-w-[160px]">{userEmail}</p>
+            <span className='py-1 px-2 rounded-full bg-primary text-white text-xs font-medium inline-block'>
+              {userType === 'alumno' ? 'Alumno' : 'Profesor'}
             </span>
           </div>
         )}
@@ -52,12 +62,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
         <ul className="sidebar-menu">
           <li>
             <Link href="/home" className={isActive('/home')}>
-              <FaHome className='sidebar-menu-icon' /> {!isCollapsed && 'Inicio'}
+              <AiOutlineHome className='sidebar-menu-icon' /> {!isCollapsed && 'Inicio'}
             </Link>
           </li>
           <li>
             <Link href="/perfil" className={isActive('/perfil')}>
-              <FaUser className='sidebar-menu-icon' /> {!isCollapsed && 'Mi Perfil'}
+              <AiOutlineUser className='sidebar-menu-icon' /> {!isCollapsed && 'Mi Perfil'}
             </Link>
           </li>
           <li>
@@ -65,6 +75,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               <IoMdPaper className='sidebar-menu-icon' /> {!isCollapsed && 'Mis Propuestas'}
             </Link>
           </li>
+          {/*
+           
           <li>
             <Link href="/perfil/guardados" className={isActive('/perfil/guardados')}>
               <FaBookmark className='sidebar-menu-icon' /> {!isCollapsed && 'Guardados'}
@@ -75,11 +87,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               <GoGear className='sidebar-menu-icon' /> {!isCollapsed && 'Configuración'}
             </Link>
           </li>
+
+           */}
           <li>
-            <Link href="/perfil/ayuda" className={isActive('/perfil/ayuda')}>
+            <Link href="/ayuda" className={isActive('/ayuda')}>
               <AiOutlineQuestionCircle className='sidebar-menu-icon' /> {!isCollapsed && 'Ayuda'}
             </Link>
           </li>
+          <li>
+            <Link href="/perfil/ayuda" className={isActive('/perfil/ayuda')}>
+              <BiLogOut className='sidebar-menu-icon' /> {!isCollapsed && 'Cerrar Sesión'}
+            </Link>
+          </li>
+
         </ul>
       </div>
     </div>

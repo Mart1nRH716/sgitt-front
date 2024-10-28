@@ -5,13 +5,19 @@ import { BiSearchAlt } from 'react-icons/bi';
 import { MdOutlineCancel } from "react-icons/md";
 import { buscarProfesores } from '../app/utils/api';
 
+interface Materia {
+  id: number;
+  nombre: string;
+}
+
 interface Profesor {
   id: number;
   email: string;
   nombre: string;
-  apellido: string;
-  matricula: string;
-  materias: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  materias: Materia[];
+  areas_profesor: Array<{id: number, nombre: string}>;
 }
 
 interface BuscadorProps {
@@ -33,7 +39,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   };
 
   const handleContactar = (profesor: Profesor) => {
-    console.log(`Contactando a ${profesor.nombre} ${profesor.apellido}`);
+    console.log(`Contactando a ${profesor.nombre} ${profesor.apellido_paterno} ${profesor.apellido_materno}`);
   };
 
   return (
@@ -63,9 +69,41 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
       <div className='resultadosDiv grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {resultados.map((profesor) => (
           <div key={profesor.id} className='profesorCard bg-white p-4 rounded-lg shadow-md'>
-            <h3 className='text-lg font-bold'>{`${profesor.nombre} ${profesor.apellido}`}</h3>
+            <h3 className='text-lg font-bold'>
+              {`${profesor.nombre} ${profesor.apellido_paterno} ${profesor.apellido_materno}`}
+            </h3>
             <p>Correo: {profesor.email}</p>
-            <p>Materias: {profesor.materias}</p>
+            
+            {/* Materias */}
+            <div className="mt-2">
+              <p className="font-semibold">Materias:</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {profesor.materias.map((materia) => (
+                  <span 
+                    key={materia.id}
+                    className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                  >
+                    {materia.nombre}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Áreas de conocimiento */}
+            <div className="mt-2">
+              <p className="font-semibold">Áreas de conocimiento:</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {profesor.areas_profesor.map((area) => (
+                  <span 
+                    key={area.id}
+                    className="inline-block px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+                  >
+                    {area.nombre}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <button 
               className='mt-4 bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors duration-300 w-full'
               onClick={() => handleContactar(profesor)}
