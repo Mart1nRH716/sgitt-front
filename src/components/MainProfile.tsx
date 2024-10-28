@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { LuPencilLine } from "react-icons/lu";
 import { obtenerPerfilAlumno, obtenerPerfilProfesor } from '../app/utils/api';
 import EditarPerfilModal from './EditarPerfilModal';
+import alumnoIcono from '../utils/alumno_icono.png';
+import profesorIcono from '../utils/profesor_icono.png';
+import Image from 'next/image';
+
 
 // Mantener las mismas interfaces
 interface BaseUserData {
@@ -224,20 +228,10 @@ const MainProfile = () => {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="relative mb-8">
-                <img 
-                    src="https://images.unsplash.com/photo-1606942040878-9a852c5045a3?q=80&w=1170&auto=format&fit=crop"
-                    className="w-full h-72 object-cover rounded-lg"
-                    alt="Cover"
-                />
-                <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-help3 hover:bg-help1 flex items-center justify-center transition-colors">
-                    <LuPencilLine />
-                </button>
-            </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-8 mb-8">
-                <img
-                    src="https://plus.unsplash.com/premium_photo-1693723595870-2b8bad09b4c2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjF8fGF6dWx8ZW58MHx8MHx8fDA%3D"
+                <Image
+                    src={userType === 'alumno' ? alumnoIcono : profesorIcono}
                     alt="Perfil"
                     className="w-28 h-28 object-cover rounded-full"
                 />
