@@ -176,6 +176,23 @@ export const obtenerPropuestasUsuario = async (): Promise<Propuesta[]> => {
   }
 };
 
+interface Profesor {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  materias: Array<{
+    id: number;
+    nombre: string;
+  }>;
+  areas_profesor: Array<{
+    id: number;
+    nombre: string;
+  }>;
+  es_profesor: boolean;
+}
+
 export const buscarProfesores = async (query: string): Promise<any[]> => {
   try {
     const token = localStorage.getItem('accessToken');
