@@ -9,11 +9,6 @@ const MainAdmin = () => {
     <div className="flex-1">
       <HeaderAdmin />
       <TablesAdmin />
-      <div className="flex gap-4 p-10">
-        <ChartAdmin />
-        <InfoAdmin />
-      </div>
-      
     </div>
   );
 }
