@@ -30,6 +30,7 @@ interface PropuestaData {
   areas: string[];
   tipo_propuesta: string;
   datos_contacto: string[];
+  visible?: boolean; 
 }
 
 // En Propuesta
@@ -52,6 +53,7 @@ interface Propuesta {
   };
   fecha_creacion: string;
   fecha_actualizacion: string;
+  visible: boolean;
 }
 
 interface Area {
@@ -433,5 +435,32 @@ export const actualizarPerfilProfesor = async (data: ActualizarPerfilData) => {
       throw new Error(error.response?.data?.message || 'Error al actualizar el perfil');
     }
     throw new Error('Error inesperado al actualizar el perfil');
+  }
+};
+
+
+export const actualizarVisibilidad = async (id: number, visible: boolean): Promise<void> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    await axios.patch(
+      `${API_URL}/propuestas/${id}/toggle_visibility/`, 
+      { visible },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error de Axios:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    throw error;
   }
 };

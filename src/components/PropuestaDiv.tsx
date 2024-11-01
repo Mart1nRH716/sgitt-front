@@ -23,6 +23,7 @@ type PropuestaType = {
   };
   fecha_creacion: string;
   fecha_actualizacion: string;
+  visible: boolean;
 };
 
 interface Area {
@@ -213,7 +214,8 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
                     Autor: {propuesta.autor.nombre} ({propuesta.autor.tipo})
                   </p>
                   <p className='text-xs text-gray-500 group-hover:text-white mt-2'>
-                    Carrera: {propuesta.carrera}
+                    {propuesta.autor.tipo === 'profesor' ? 'Departamento: ' : 'Carrera: '} 
+                    {propuesta.carrera}
                   </p>
                   <div className='areas flex flex-wrap gap-2 mt-2'>
                     {propuesta.areas.slice(0, 2).map((area) => (
@@ -277,8 +279,9 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
               <p className='text-gray-600 mt-2'>{selected.objetivo}</p>
               <p className='mt-2'><strong>Fecha de creación:</strong> {new Date(selected.fecha_creacion).toLocaleString()}</p>
               <p><strong>Última actualización:</strong> {new Date(selected.fecha_actualizacion).toLocaleString()}</p>
-              <p className='mt-2'><strong>Autor:</strong> {selected.autor.nombre} ({selected.autor.tipo})</p>
-              <p><strong>Carrera:</strong> {selected.carrera}</p>
+              <p>
+                <strong>{selected.autor.tipo === 'profesor' ? 'Departamento:' : 'Carrera:'}</strong> {selected.carrera}
+              </p>
               <p><strong>Correo:</strong> {selected.autor.email}</p>
               <p><strong>Tipo de Propuesta:</strong> {selected.tipo_propuesta}</p>
               <p><strong>Numero de alumnos: </strong> {selected.cantidad_alumnos}</p>

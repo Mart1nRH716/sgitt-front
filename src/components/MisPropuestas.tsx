@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { obtenerPropuestasUsuario , eliminarPropuesta  } from '../app/utils/api';
+import { obtenerPropuestasUsuario , eliminarPropuesta , actualizarVisibilidad } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Plus , Edit2 , Trash2  } from 'lucide-react';
+import { Plus , Edit2 , Trash2 ,Eye, EyeOff} from 'lucide-react';
 import EditarPropuestaModal from './EditarPropuestaModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+
+
 
 interface Propuesta {
   id: number;
@@ -27,6 +29,7 @@ interface Propuesta {
   };
   fecha_creacion: string;
   fecha_actualizacion: string;
+  visible: boolean;
 }
 
 
@@ -78,6 +81,16 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
       setPropuestas(data);
     } catch (err) {
       console.error('Error al recargar propuestas:', err);
+    }
+  };
+
+  const handleToggleVisibility = async (propuestaId: number, visible: boolean) => {
+    try {
+      await actualizarVisibilidad(propuestaId, !visible);
+      await recargarPropuestas();  // Recargar la lista de propuestas
+    } catch (err) {
+      console.error('Error al cambiar la visibilidad:', err);
+      // Opcionalmente, mostrar un mensaje de error al usuario
     }
   };
 
@@ -163,6 +176,17 @@ const MisPropuestas: React.FC<MisPropuestasProps> = () => {
                 title="Editar propuesta"
               >
                 <Edit2 className="w-5 h-5 text-gray-600 hover:text-primary" />
+              </button>
+              <button
+                onClick={() => handleToggleVisibility(propuesta.id, propuesta.visible)}
+                className={`p-2 hover:bg-gray-100 rounded-full transition-colors`}
+                title={propuesta.visible ? 'Hacer invisible' : 'Hacer visible'}
+              >
+                {propuesta.visible ? (
+                  <Eye className="w-5 h-5 text-green-600" />
+                ) : (
+                  <EyeOff className="w-5 h-5 text-gray-400" />
+                )}
               </button>
               <button
                 onClick={() => {
