@@ -4,6 +4,7 @@ import { FiClock } from "react-icons/fi";
 import { GiSharkFin } from "react-icons/gi";
 import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { obtenerPropuestas, obtenerAreas  } from '../app/utils/api';
+import MultiSelect from './MultiSelect';
 
 type PropuestaType = {
   id: number;
@@ -38,12 +39,13 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const propuestasPerPage = 4;
   const [ordenarPor, setOrdenarPor] = useState("");
-  const [areaFiltro, setAreaFiltro] = useState("");
   const [carreraFiltro, setCarreraFiltro] = useState("");
   const [areas, setAreas] = useState<Area[]>([]);
   const [userType, setUserType] = useState<'alumno' | 'profesor' | null>(null);
   const [autorFiltro, setAutorFiltro] = useState("");
-  const [allPropuestas, setAllPropuestas] = useState<PropuestaType[]>([]);
+  const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
+  const [departamentoFiltro, setDepartamentoFiltro] = useState("");
+
  
 
   useEffect(() => {
@@ -63,7 +65,6 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
           ? propuestasData.filter(p => p.autor.tipo === 'alumno')
           : propuestasData;
         
-        setAllPropuestas(filteredPropuestas);
         setPropuestas(filteredPropuestas);
         setAreas(areasData);
       } catch (error) {
@@ -114,9 +115,11 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
     }
 
     // Filtro por área
-    if (areaFiltro) {
+    if (selectedAreas.length > 0) {
       resultado = resultado.filter((propuesta) => 
-        propuesta.areas.some(area => area.id.toString() === areaFiltro)
+        propuesta.areas.some(propuestaArea => 
+          selectedAreas.some(selectedArea => selectedArea.id === propuestaArea.id)
+        )
       );
     }
 
@@ -125,6 +128,19 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
     if (autorFiltro) {
       resultado = resultado.filter((propuesta) => propuesta.autor.tipo === autorFiltro);
     }
+    // Filtro por carrera (solo para alumnos)
+  if (autorFiltro === 'alumno' && carreraFiltro) {
+    resultado = resultado.filter((propuesta) =>
+      propuesta.carrera.toLowerCase() === carreraFiltro.toLowerCase()
+    );
+  }
+
+  // Filtro por departamento (solo para profesores)
+  if (autorFiltro === 'profesor' && departamentoFiltro) {
+    resultado = resultado.filter((propuesta) =>
+      propuesta.carrera.toLowerCase() === departamentoFiltro.toLowerCase()
+    );
+  }
 
     // Ordenar
     if (ordenarPor) {
@@ -146,8 +162,9 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
 
   const handleLimpiarFiltros = () => {
     setOrdenarPor("");
-    setAreaFiltro("");
+    setSelectedAreas([]);
     setCarreraFiltro("");
+    setDepartamentoFiltro("");
     setAutorFiltro("");
   };
 
@@ -203,37 +220,55 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
           </div>
         )}
 
-        <div className='busquedaUnica flex items-center gap-2'>
-          <label htmlFor="area" className='text-oscure font-bold'>Áreas: </label>
-          <select 
-            id="area" 
-            className='bg-white rounded-md px-4 py-1'
-            value={areaFiltro}
-            onChange={(e) => setAreaFiltro(e.target.value)}
-          >
-            <option value="">Todas</option>
-            {areas.map((area) => (
-              <option key={area.id} value={area.id.toString()}>
-                {area.nombre}
-              </option>
-            ))}
-          </select>
+        <div className='busquedaUnica flex items-center gap-2 min-w-[250px]'>
+          <label htmlFor="area" className='text-oscure font-bold whitespace-nowrap'>Áreas: </label>
+          <MultiSelect
+            options={areas}
+            value={selectedAreas}
+            onChange={setSelectedAreas}
+            placeholder="Seleccionar áreas..."
+            searchPlaceholder="Buscar área..."
+          />
         </div>
-
-        <div className='busquedaUnica flex items-center gap-2'>
-          <label htmlFor="carrera" className='text-oscure font-bold'>Carrera: </label>
-          <select 
-            id="carrera" 
-            className='bg-white rounded-md px-4 py-1'
-            value={carreraFiltro}
-            onChange={(e) => setCarreraFiltro(e.target.value)}
-          >
-            <option value="">Todas</option>
-            <option value="LCD">Ciencia de Datos</option>
-            <option value="ISC">Sistemas Computacionales</option>
-            <option value="IIA">Inteligencia Artificial</option>
-          </select>
-        </div>
+        
+        {autorFiltro && (
+          <div className='busquedaUnica flex items-center gap-2'>
+            {autorFiltro === 'alumno' ? (
+              <>
+                <label htmlFor="carrera" className='text-oscure font-bold'>Carrera: </label>
+                <select 
+                  id="carrera" 
+                  className='bg-white rounded-md px-4 py-1'
+                  value={carreraFiltro}
+                  onChange={(e) => setCarreraFiltro(e.target.value)}
+                >
+                  <option value="">Todas</option>
+                  <option value="LCD">Ciencia de Datos</option>
+                  <option value="ISC">Sistemas Computacionales</option>
+                  <option value="IIA">Inteligencia Artificial</option>
+                </select>
+              </>
+            ) : (
+              <>
+                <label htmlFor="departamento" className='text-oscure font-bold'>Departamento: </label>
+                <select 
+                  id="departamento" 
+                  className='bg-white rounded-md px-4 py-1'
+                  value={departamentoFiltro}
+                  onChange={(e) => setDepartamentoFiltro(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="CIC">CIC</option>
+                  <option value="FB">FB</option>
+                  <option value="FII">FII</option>
+                  <option value="ISC">ISC</option>
+                  <option value="POSGR">POSGR</option>
+                  <option value="SUB ACAD">SUB ACAD</option>
+                </select>
+              </>
+            )}
+          </div>
+        )}
 
         <button 
           className='text-oscure cursor-pointer font-bold hover:text-help2 transition-colors duration-300'
