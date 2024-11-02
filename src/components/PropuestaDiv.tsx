@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiClock } from "react-icons/fi";
 import { GiSharkFin } from "react-icons/gi";
+import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { obtenerPropuestas, obtenerAreas  } from '../app/utils/api';
 
 type PropuestaType = {
@@ -40,16 +41,30 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
   const [areaFiltro, setAreaFiltro] = useState("");
   const [carreraFiltro, setCarreraFiltro] = useState("");
   const [areas, setAreas] = useState<Area[]>([]);
+  const [userType, setUserType] = useState<'alumno' | 'profesor' | null>(null);
+  const [autorFiltro, setAutorFiltro] = useState("");
+  const [allPropuestas, setAllPropuestas] = useState<PropuestaType[]>([]);
  
 
   useEffect(() => {
+    // Obtener el tipo de usuario del localStorage
+    const storedUserType = localStorage.getItem('user-Type') as 'alumno' | 'profesor';
+    setUserType(storedUserType);
+
     const fetchData = async () => {
       try {
         const [propuestasData, areasData] = await Promise.all([
           obtenerPropuestas(),
           obtenerAreas()
         ]);
-        setPropuestas(propuestasData);
+        
+        // Filtrar propuestas según el tipo de usuario
+        const filteredPropuestas = storedUserType === 'profesor' 
+          ? propuestasData.filter(p => p.autor.tipo === 'alumno')
+          : propuestasData;
+        
+        setAllPropuestas(filteredPropuestas);
+        setPropuestas(filteredPropuestas);
         setAreas(areasData);
       } catch (error) {
         console.error('Error al obtener datos:', error);
@@ -58,6 +73,18 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
 
     fetchData();
   }, []);
+
+  const getAuthorTypeIcon = (type: 'alumno' | 'profesor') => {
+    return type === 'alumno' 
+      ? <FaUserGraduate className="w-5 h-5 text-blue-500" />
+      : <FaChalkboardTeacher className="w-5 h-5 text-green-500" />;
+  };
+
+  const getAuthorTypeStyle = (type: 'alumno' | 'profesor') => {
+    return type === 'alumno'
+      ? 'border-l-4 border-blue-500'
+      : 'border-l-4 border-green-500';
+  };
 
   const handleSelect = (propuesta: PropuestaType) => {
     setSelected(propuesta);
@@ -70,6 +97,13 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
 
   const aplicarFiltros = (propuestas: PropuestaType[]) => {
     let resultado = propuestas;
+
+    // Filtro por carrera
+    if (carreraFiltro) {
+      resultado = resultado.filter((propuesta) =>
+        propuesta.carrera.toLowerCase() === carreraFiltro.toLowerCase()
+      );
+    }
 
     // Filtro por término de búsqueda
     if (searchTerm) {
@@ -86,11 +120,10 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
       );
     }
 
-    // Filtro por carrera
-    if (carreraFiltro) {
-      resultado = resultado.filter((propuesta) =>
-        propuesta.carrera.toLowerCase() === carreraFiltro.toLowerCase()
-      );
+
+    // Filtro por tipo de autor (solo si hay un filtro seleccionado)
+    if (autorFiltro) {
+      resultado = resultado.filter((propuesta) => propuesta.autor.tipo === autorFiltro);
     }
 
     // Ordenar
@@ -111,9 +144,14 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
     return resultado;
   };
 
+  const handleLimpiarFiltros = () => {
+    setOrdenarPor("");
+    setAreaFiltro("");
+    setCarreraFiltro("");
+    setAutorFiltro("");
+  };
+
   const filteredPropuestas = aplicarFiltros(propuestas);
-
-
   const totalPropuestas = filteredPropuestas.length;
   const totalPages = Math.ceil(totalPropuestas / propuestasPerPage);
   const startIndex = (currentPage - 1) * propuestasPerPage;
@@ -148,6 +186,23 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
           </select>
         </div>
 
+        {/* Nuevo filtro por tipo de autor (solo visible para alumnos) */}
+        {userType === 'alumno' && (
+          <div className='busquedaUnica flex items-center gap-2'>
+            <label htmlFor="autor" className='text-oscure font-bold'>Autor: </label>
+            <select 
+              id="autor" 
+              className='bg-white rounded-md px-4 py-1'
+              value={autorFiltro}
+              onChange={(e) => setAutorFiltro(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="alumno">Alumnos</option>
+              <option value="profesor">Profesores</option>
+            </select>
+          </div>
+        )}
+
         <div className='busquedaUnica flex items-center gap-2'>
           <label htmlFor="area" className='text-oscure font-bold'>Áreas: </label>
           <select 
@@ -181,12 +236,8 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
         </div>
 
         <button 
-          className='text-oscure cursor-pointer font-bold hover:text-help2'
-          onClick={() => {
-            setOrdenarPor("");
-            setAreaFiltro("");
-            setCarreraFiltro("");
-          }}
+          className='text-oscure cursor-pointer font-bold hover:text-help2 transition-colors duration-300'
+          onClick={handleLimpiarFiltros}
         >
           Limpiar filtros
         </button>
@@ -198,46 +249,61 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
               <div
                 key={propuesta.id}
                 onClick={() => handleSelect(propuesta)}
-                className={`group propUnica p-5 bg-white rounded-xl hover:bg-secondary shadow-lg shadow-oscure-400/700 cursor-pointer flex flex-col justify-between ${selected && selected.id === propuesta.id ? 'bg-secondary' : ''}`}
-              >
+                className={`
+                  group propUnica p-5 bg-white rounded-xl hover:bg-secondary 
+                  shadow-lg shadow-oscure-400/700 cursor-pointer flex flex-col 
+                  justify-between transition-all duration-300
+                  ${selected && selected.id === propuesta.id ? 'bg-secondary' : ''}
+                  ${getAuthorTypeStyle(propuesta.autor.tipo)}
+                `}
+                >
                 <div className='flex flex-col h-full'>
                   <div className='flex justify-between items-start gap-2 mb-2'>
-                    <h1 className='text-base font-semibold text-black group-hover:text-white break-words flex-grow'>{propuesta.nombre}</h1>
+                    <div className='flex items-center gap-2'>
+                      {getAuthorTypeIcon(propuesta.autor.tipo)}
+                      <h1 className='text-base font-semibold text-black group-hover:text-white break-words flex-grow'>
+                        {propuesta.nombre}
+                      </h1>
+                    </div>
                     <span className='flex items-center text-gray-400 gap-1 whitespace-nowrap'>
-                      <FiClock className="flex-shrink-0" /> {new Date(propuesta.fecha_actualizacion).toLocaleDateString()}
+                      <FiClock className="flex-shrink-0" /> 
+                      {new Date(propuesta.fecha_actualizacion).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className='text-sm text-gray-400 pt-2 border-t-2 mt-2 group-hover:text-white overflow-hidden line-clamp-4 flex-grow'>
+                  
+                  <div className='flex items-center gap-2 text-xs text-gray-500 group-hover:text-white mt-2'>
+                    <span className={`px-2 py-1 rounded-full ${
+                      propuesta.autor.tipo === 'alumno' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    } group-hover:bg-opacity-50`}>
+                      {propuesta.autor.tipo === 'alumno' ? 'Alumno' : 'Profesor'}
+                    </span>
+                  </div>
+
+                  <p className='text-sm text-gray-600 pt-2 border-t-2 mt-2 group-hover:text-white overflow-hidden line-clamp-4 flex-grow'>
                     {propuesta.objetivo}
                   </p>
-                  <p className='text-xs text-gray-500 group-hover:text-white mt-2'>
-                    Autor: {propuesta.autor.nombre} ({propuesta.autor.tipo})
-                  </p>
-                  <p className='text-xs text-gray-500 group-hover:text-white mt-2'>
-                    {propuesta.autor.tipo === 'profesor' ? 'Departamento: ' : 'Carrera: '} 
-                    {propuesta.carrera}
-                  </p>
+                  
+                  <div className='mt-2 space-y-1'>
+                    <p className='text-xs text-gray-500 group-hover:text-white'>
+                      {propuesta.autor.nombre}
+                    </p>
+                    <p className='text-xs text-gray-500 group-hover:text-white'>
+                      {propuesta.autor.tipo === 'profesor' ? 'Departamento: ' : 'Carrera: '} 
+                      {propuesta.carrera}
+                    </p>
+                  </div>
+
                   <div className='areas flex flex-wrap gap-2 mt-2'>
                     {propuesta.areas.slice(0, 2).map((area) => (
-                      <span key={area.id} className='text-xs bg-gray-200 rounded-full px-2 py-1 truncate'>
+                      <span key={area.id} className='text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-1 truncate group-hover:bg-white/20 group-hover:text-white'>
                         {area.nombre}
                       </span>
                     ))}
                     {propuesta.areas.length > 2 && (
-                      <span className='text-xs bg-gray-200 rounded-full px-2 py-1'>
+                      <span className='text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-1 group-hover:bg-white/20 group-hover:text-white'>
                         +{propuesta.areas.length - 2}
-                      </span>
-                    )}
-                  </div>
-                  <div className='palabras-clave flex flex-wrap gap-2 mt-auto pt-2'>
-                    {propuesta.palabras_clave.slice(0, 3).map((palabra) => (
-                      <span key={palabra.id} className='text-xs bg-gray-200 rounded-full px-2 py-1 truncate'>
-                        {palabra.palabra}
-                      </span>
-                    ))}
-                    {propuesta.palabras_clave.length > 3 && (
-                      <span className='text-xs bg-gray-200 rounded-full px-2 py-1'>
-                        +{propuesta.palabras_clave.length - 3}
                       </span>
                     )}
                   </div>
@@ -268,14 +334,18 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
 
         <div className='w-full md:w-2/3 p-5'>
           {selected ? (
-            <div className='bg-white p-6 rounded-lg shadow-md relative'>
+            <div className={`bg-white p-6 rounded-lg shadow-md relative ${getAuthorTypeStyle(selected.autor.tipo)}`}>
               <button
                 onClick={handleCloseDetails}
                 className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
               >
                 &times;
               </button>
-              <h2 className='text-2xl font-bold break-words'>{selected.nombre}</h2>
+              
+              <div className="flex items-center gap-2 mb-4">
+                {getAuthorTypeIcon(selected.autor.tipo)}
+                <h2 className='text-2xl font-bold break-words'>{selected.nombre}</h2>
+              </div>
               <p className='text-gray-600 mt-2'>{selected.objetivo}</p>
               <p className='mt-2'><strong>Fecha de creación:</strong> {new Date(selected.fecha_creacion).toLocaleString()}</p>
               <p><strong>Última actualización:</strong> {new Date(selected.fecha_actualizacion).toLocaleString()}</p>
