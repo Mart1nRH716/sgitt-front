@@ -3,7 +3,7 @@
 import React from 'react';
 import Layout from "@/components/Layout";
 import CrearPropuesta from "@/components/CrearPropuesta";
-
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const App = () =>{
   return (
@@ -13,4 +13,10 @@ const App = () =>{
     
   );
 }
-export default App;
+// export default App;
+
+export default () => (
+  <ProtectedRoute>
+    <App />
+  </ProtectedRoute>
+);

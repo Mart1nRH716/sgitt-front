@@ -11,6 +11,7 @@ import { BiLogOut } from "react-icons/bi";
 import Image from 'next/image';
 import alumnoIcono from '../utils/alumno_icono.png';
 import profesorIcono from '../utils/profesor_icono.png';
+import { logout } from '../app/utils/authUtils';
 
 
 
@@ -95,9 +96,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             </Link>
           </li>
           <li>
-            <Link href="/perfil/ayuda" className={isActive('/perfil/ayuda')}>
-              <BiLogOut className='sidebar-menu-icon' /> {!isCollapsed && 'Cerrar Sesión'}
-            </Link>
+            <button 
+              onClick={logout}
+              className="flex items-center gap-4 py-2 px-3 hover:bg-help3 font-medium text-lg border-l-4 border-transparent whitespace-nowrap w-full"
+            >
+              <BiLogOut className='sidebar-menu-icon' /> 
+              {!isCollapsed && 'Cerrar Sesión'}
+            </button>
           </li>
 
         </ul>

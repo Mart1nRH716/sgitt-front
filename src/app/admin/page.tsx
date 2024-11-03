@@ -2,6 +2,7 @@
 import MainAdmin from '@/components/MainAdmin';
 import SideBarAdmin from '@/components/SideBarAdmin';
 import React from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const AdminPage = () => {
 
@@ -20,4 +21,11 @@ const AdminPage = () => {
   );
 }
 
-export default AdminPage;
+// export default AdminPage;
+
+export default () => (
+    <ProtectedRoute>
+      <AdminPage />
+    </ProtectedRoute>
+  );
+  

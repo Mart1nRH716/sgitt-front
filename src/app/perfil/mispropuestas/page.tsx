@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import MisPropuestas from '@/components/MisPropuestas';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 
 const MisPropuestasPage: React.FC = () => {
@@ -20,4 +21,9 @@ const MisPropuestasPage: React.FC = () => {
   );
 };
 
-export default MisPropuestasPage;
+// export default MisPropuestasPage;
+export default () => (
+  <ProtectedRoute>
+    <MisPropuestasPage />
+  </ProtectedRoute>
+);
