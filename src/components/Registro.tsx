@@ -31,6 +31,12 @@ const Register: React.FC = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [showCustomAreaPopup, setShowCustomAreaPopup] = useState(false);
   const router = useRouter();
+  const [errors, setErrors] = useState<{
+    email?: string;
+    boleta?: string;
+    password?: string;
+    general?: string;
+  }>({});
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -47,12 +53,30 @@ const Register: React.FC = () => {
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setAreaError('');
+    setErrors({});
+
+    const clientErrors: typeof errors = {};
+    if (formData.password.length < 8) {
+      clientErrors.password = "La contraseña debe tener al menos 8 caracteres";
+    }
+    
+    if (!formData.password.match(/[A-Z]/)) {
+      clientErrors.password = "La contraseña debe contener al menos una letra mayúscula";
+    }
+    
+    if (!formData.password.match(/[0-9]/)) {
+      clientErrors.password = "La contraseña debe contener al menos un número";
+    }
+    
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       setPasswordError('Las contraseñas no coinciden');
       return;
-    }
+    } 
 
     const totalAreas = formData.areas_ids.length + formData.areas_custom.length;
     if (totalAreas < 3) {
@@ -62,14 +86,17 @@ const Register: React.FC = () => {
 
     try {
       const response = await register(formData);
-      console.log(response);
       setRegistrationSuccess(true);
       setTimeout(() => {
         router.push('/');
       }, 5000);
-    } catch (error) {
-      console.error(error);
-      setError('Error al registrar. Por favor, intente nuevamente.');
+    } catch (error: any) {
+      console.error('Error de registro:', error);
+      if (error.errors) {
+        setErrors(error.errors);
+      } else {
+        setError('Error al registrar. Por favor, intente nuevamente.');
+      }
     }
   }, [formData, router]);
 
@@ -180,28 +207,34 @@ const Register: React.FC = () => {
             />
           </div>
           <div>
-            <label htmlFor="boleta" className="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
-            <input
-              id="boleta"
-              name="boleta"
-              type="text"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.boleta}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
+              <label htmlFor="boleta" className="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
+              <input
+                id="boleta"
+                name="boleta"
+                type="text"
+                required
+                className={`w-full px-3 py-2 border ${errors.boleta ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                value={formData.boleta}
+                onChange={handleChange}
+              />
+              {errors.boleta && (
+                <p className="text-red-500 text-sm mt-1">{errors.boleta}</p>
+              )}
+            </div>
+            <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
             <input
               id="email"
               name="email"
               type="email"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               value={formData.email}
               onChange={handleChange}
             />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
           
           {/* Nuevos campos de contraseña */}
@@ -212,10 +245,13 @@ const Register: React.FC = () => {
               name="password"
               type="password"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               value={formData.password}
               onChange={handleChange}
             />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
           </div>
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contraseña</label>
