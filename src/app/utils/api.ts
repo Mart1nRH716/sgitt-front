@@ -502,3 +502,72 @@ export const cambiarContrasenaProfesor = async (data: CambioContrasenaData): Pro
     throw error;
   }
 };
+
+
+export const requestPasswordReset = async (email: string): Promise<ApiResponse> => {
+  try {
+    const response = await axios.post<ApiResponse>(
+      `${API_URL}/usuarios/reset-password-request/`, 
+      { email }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error.response?.data?.error || 'Error al enviar el correo de restablecimiento';
+    }
+    throw new Error('Error inesperado al solicitar el restablecimiento de contraseña');
+  }
+};
+
+export const resetPassword = async (token: string, passwords: { password: string, confirmPassword: string }): Promise<ApiResponse> => {
+  try {
+    const response = await axios.post<ApiResponse>(
+      `${API_URL}/usuarios/reset-password/${token}/`,
+      passwords
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error.response?.data?.error || 'Error al restablecer la contraseña';
+    }
+    throw new Error('Error inesperado al restablecer la contraseña');
+  }
+};
+export const cambiarContraseña = async (data: { 
+  currentPassword: string; 
+  newPassword: string; 
+  confirmPassword: string; 
+}): Promise<ApiResponse> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.post(
+      `${API_URL}/usuarios/cambiar-contrasena/`,
+      data,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Actualizar los tokens en el localStorage
+    if (response.data.access) {
+      localStorage.setItem('accessToken', response.data.access);
+    }
+    if (response.data.refresh) {
+      localStorage.setItem('refreshToken', response.data.refresh);
+    }
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error.response?.data?.error || 'Error al cambiar la contraseña';
+    }
+    throw error;
+  }
+};

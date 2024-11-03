@@ -6,6 +6,7 @@ import EditarPerfilModal from './EditarPerfilModal';
 import alumnoIcono from '../utils/alumno_icono.png';
 import profesorIcono from '../utils/profesor_icono.png';
 import Image from 'next/image';
+import CambiarContrasenaModal from './CambiarContrasenaModal';
 
 
 // Mantener las mismas interfaces
@@ -41,6 +42,7 @@ const MainProfile = () => {
     const [error, setError] = useState<string | null>(null);
     const [userType, setUserType] = useState<'alumno' | 'profesor' | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
     const fetchUserData = async () => {
         try {
@@ -254,13 +256,23 @@ const MainProfile = () => {
                         )}
                     </h2>
                     <span className="text-lg text-gray-500 capitalize">{userType}</span>
-                </div>
+                </div >
+                <div className="flex gap-4">
                 <button 
-                onClick={() => setIsEditModalOpen(true)}
-                className="py-2 px-4 rounded bg-secondary hover:bg-primary transition-colors text-white flex items-center gap-2"
-                >
-                <LuPencilLine /> Editar Perfil
-                </button>
+                        onClick={() => setIsChangePasswordModalOpen(true)}
+                        className="py-2 px-4 rounded bg-secondary hover:bg-primary transition-colors text-white flex items-center gap-2"
+                    >
+                        <LuPencilLine /> Cambiar Contraseña
+                    </button>
+                    <button 
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="py-2 px-4 rounded bg-secondary hover:bg-primary transition-colors text-white flex items-center gap-2"
+                    >
+                        <LuPencilLine /> Editar Perfil
+                    </button>
+
+                </div>
+                
             </div>
 
             {renderUserProfile()}
@@ -272,6 +284,12 @@ const MainProfile = () => {
                     onUpdate={fetchUserData}
                     userType={userType}
                     currentData={userData}
+                />
+            )}
+            {isChangePasswordModalOpen && (
+                <CambiarContrasenaModal
+                    isOpen={isChangePasswordModalOpen}
+                    onClose={() => setIsChangePasswordModalOpen(false)}
                 />
             )}
         </div>
