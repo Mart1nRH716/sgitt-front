@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import NabVar from "@/components/NabVar";
 import PropuestaDiv from "@/components/PropuestaDiv";
 import Layout from '@/components/Layout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,4 +25,10 @@ const Home = () => {
   );
 }
 
-export default Home;
+// export default Home;
+
+export default () => (
+  <ProtectedRoute>
+    <Home />
+  </ProtectedRoute>
+);
