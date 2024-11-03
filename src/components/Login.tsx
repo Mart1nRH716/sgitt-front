@@ -4,47 +4,53 @@ import React, { useState } from 'react'
 import { login } from '../app/utils/api'
 import { UserIcon, KeyIcon, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import CambioContrasenaModal from './CambioContrasenaModal'
+import AgregarAreasModal from './AgregarAreasModal'
 
 const Login: React.FC = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showAreasModal, setShowAreasModal] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
   
-    try {
-      const response = await login(credentials);
-      console.log(response);
-      //print response
-      console.log(response.access);
-      console.log(response.user_email);
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
 
-      // Save tokens to localStorage
-      localStorage.setItem('refreshToken', response.refresh);
-      localStorage.setItem('accessToken', response.access);
-      localStorage.setItem('userEmail', response.user_email);
-      localStorage.setItem('user-Type', response.user_type);
-      
-      // Redirect to dashboard
+  try {
+    const response = await login(credentials);
+    
+    // Guardar tokens y datos de usuario
+    localStorage.setItem('refreshToken', response.refresh);
+    localStorage.setItem('accessToken', response.access);
+    localStorage.setItem('userEmail', response.user_email);
+    localStorage.setItem('user-Type', response.user_type);
+    
+    // Si es profesor y es su primer inicio, mostrar modal de cambio de contraseña
+    if (response.user_type === 'profesor' && response.primer_inicio) {
+      setShowPasswordModal(true);
+    } else {
+      // Redirigir a dashboard
       window.location.href = '/home';
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Ocurrió un error al iniciar sesión. Por favor, intente de nuevo.');
-      }
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error) {
+      setError(error.message);
+    } else {
+      setError('Ocurrió un error al iniciar sesión. Por favor, intente de nuevo.');
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -97,6 +103,27 @@ const Login: React.FC = () => {
                 </button>
               </div>
             </form>
+            {showPasswordModal && (
+              <CambioContrasenaModal
+                onPasswordChanged={() => {
+                  setShowPasswordModal(false);
+                  setShowAreasModal(true);
+                }}
+              />
+            )}
+
+            {showAreasModal && (
+              <AgregarAreasModal
+                onSkip={() => {
+                  setShowAreasModal(false);
+                  window.location.href = '/home';
+                }}
+                onComplete={() => {
+                  setShowAreasModal(false);
+                  window.location.href = '/home';
+                }}
+              />
+            )}
           </div>
         </div>
       </main>

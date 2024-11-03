@@ -32,6 +32,7 @@ interface ProfesorData extends BaseUserData {
   apellido_materno: string; 
   apellido_paterno: string;
   es_profesor: boolean;
+  departamento: string;
 }
 
 const MainProfile = () => {
@@ -172,6 +173,7 @@ const MainProfile = () => {
             );
         }
 
+        // En el componente MainProfile, actualizar la sección del profesor:
         if (userType === 'profesor') {
             const profesorData = userData as ProfesorData;
             return (
@@ -186,38 +188,47 @@ const MainProfile = () => {
                                     <p><strong>Apellido Paterno:</strong> {profesorData.apellido_paterno}</p>
                                     <p><strong>Apellido Materno:</strong> {profesorData.apellido_materno}</p>
                                     <p><strong>Email:</strong> {profesorData.email}</p>
+                                    <p><strong>Departamento:</strong> {profesorData.departamento}</p>
                                 </div>
                             </div>
-        
+
                             <div className="bg-gray-50 p-4 rounded-lg">
                                 <h3 className="font-semibold text-gray-700 mb-4">Materias Impartidas</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {profesorData.materias && profesorData.materias.length > 0 ? (
                                         profesorData.materias.map((materia) => (
-                                            <span key={materia.id} className="px-4 py-2 bg-green-100 text-green-800 rounded-full">
+                                            <span 
+                                                key={materia.id} 
+                                                className="px-4 py-2 bg-green-100 text-green-800 rounded-full transition-colors hover:bg-green-200"
+                                            >
                                                 {materia.nombre}
                                             </span>
                                         ))
                                     ) : (
-                                        <p className="text-gray-500">No hay materias registradas</p>
+                                        <p className="text-gray-500 italic">No hay materias registradas</p>
                                     )}
                                 </div>
                             </div>
                         </div>
-        
-                        {/* Nueva sección para áreas de conocimiento */}
+
+                        {/* Sección de áreas de conocimiento */}
                         <div className="mt-8">
                             <h3 className="font-semibold text-gray-700 mb-4">Áreas de Conocimiento</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {profesorData.areas_profesor && profesorData.areas_profesor.length > 0 ? (
-                                    profesorData.areas_profesor.map((area) => (
-                                        <span key={area.id} className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full">
-                                            {area.nombre}
-                                        </span>
-                                    ))
-                                ) : (
-                                    <p className="text-gray-500">No hay áreas de conocimiento registradas</p>
-                                )}
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex flex-wrap gap-2">
+                                    {profesorData.areas_profesor && profesorData.areas_profesor.length > 0 ? (
+                                        profesorData.areas_profesor.map((area) => (
+                                            <span 
+                                                key={area.id} 
+                                                className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full transition-colors hover:bg-blue-200"
+                                            >
+                                                {area.nombre}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <p className="text-gray-500 italic">No hay áreas de conocimiento registradas</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

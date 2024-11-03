@@ -1,9 +1,15 @@
 'use client'
 
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { PlusCircle, X } from 'lucide-react';
-import { crearPropuesta } from '../app/utils/api';
+import React, { useState, ChangeEvent, FormEvent, useEffect,useRef } from 'react';
+import { PlusCircle, X , Check, ChevronDown} from 'lucide-react';
+import { crearPropuesta,obtenerAreas  } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
+import MultiSelect from './MultiSelect';
+
+interface Area {
+  id: number;
+  nombre: string;
+}
 
 interface PropuestaForm {
   nombre: string;
@@ -16,11 +22,54 @@ interface PropuestaForm {
   tipo_propuesta: string;
   datos_contacto: string[];
 }
+
   
   const CrearPropuesta: React.FC = () => {
     const router = useRouter();
     const [success, setSuccess] = useState(false);
     const [nuevoDatoContacto, setNuevoDatoContacto] = useState('');
+    const [areasDisponibles, setAreasDisponibles] = useState<Area[]>([]);
+    const [areasSeleccionadas, setAreasSeleccionadas] = useState<Area[]>([]);
+    const [customArea, setCustomArea] = useState('');
+    const [areaSearch, setAreaSearch] = useState('');
+    const [isAreasDropdownOpen, setIsAreasDropdownOpen] = useState(false);
+    const areaInputRef = useRef<HTMLDivElement>(null);
+
+    // Agregar useEffect para cargar las áreas disponibles
+    useEffect(() => {
+      const fetchAreas = async () => {
+        try {
+          const data = await obtenerAreas();
+          setAreasDisponibles(data);
+        } catch (error) {
+          console.error('Error al cargar áreas:', error);
+        }
+      };
+      fetchAreas();
+    
+      const handleClickOutside = (event: MouseEvent) => {
+        if (areaInputRef.current && !areaInputRef.current.contains(event.target as Node)) {
+          setIsAreasDropdownOpen(false);
+        }
+      };
+    
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+    
+    // Modifica el handleAddArea:
+    const handleAddArea = (areaToAdd: string | Area) => {
+      const areaName = typeof areaToAdd === 'string' ? areaToAdd : areaToAdd.nombre;
+      if (areaName.trim() && !propuesta.areas.includes(areaName.trim())) {
+        setPropuesta(prev => ({
+          ...prev,
+          areas: [...prev.areas, areaName.trim()]
+        }));
+      }
+      setAreaSearch('');
+      setIsAreasDropdownOpen(false);
+    };
+    
 
     const [propuesta, setPropuesta] = useState<PropuestaForm>({
       nombre: '',
@@ -30,7 +79,7 @@ interface PropuestaForm {
       requisitos: [],
       palabras_clave: [],
       areas: [],
-      tipo_propuesta: '',
+      tipo_propuesta: 'TT1',
       datos_contacto: [localStorage.getItem('userEmail') || ''], // Email del usuario por defecto
     });
 
@@ -41,8 +90,12 @@ interface PropuestaForm {
     const [nuevaArea, setNuevaArea] = useState('');
   
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { name, value } = e.target;
-      setPropuesta(prev => ({ ...prev, [name]: value }));
+      const { name, value, type } = e.target as HTMLInputElement; // Type assertion para acceder a la propiedad type
+      if (type === 'radio') {
+        setPropuesta(prev => ({ ...prev, [name]: value }));
+      } else {
+        setPropuesta(prev => ({ ...prev, [name]: value }));
+      }
     };
 
     const handleAddDatoContacto = () => {
@@ -52,6 +105,12 @@ interface PropuestaForm {
           datos_contacto: [...prev.datos_contacto, nuevoDatoContacto.trim()]
         }));
         setNuevoDatoContacto('');
+      }
+    };
+    const handleKeyPressContacto = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddDatoContacto();
       }
     };
 
@@ -74,6 +133,15 @@ interface PropuestaForm {
         setNuevoRequisito('');
       }
     };
+
+    const handleKeyPressReq = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddRequisito();
+      }
+    };
+    
+    
   
     const handleAddPalabraClave = () => {
       if (nuevaPalabraClave.trim() !== '') {
@@ -82,6 +150,12 @@ interface PropuestaForm {
           palabras_clave: [...prev.palabras_clave, nuevaPalabraClave.trim()]
         }));
         setNuevaPalabraClave('');
+      }
+    };
+    const handleKeyPressPalabra = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddPalabraClave();
       }
     };
   
@@ -98,7 +172,7 @@ interface PropuestaForm {
         palabras_clave: prev.palabras_clave.filter((_, i) => i !== index)
       }));
     };
-
+/*
     const handleAddArea = () => {
       if (nuevaArea.trim() !== '') {
         setPropuesta(prev => ({
@@ -108,7 +182,13 @@ interface PropuestaForm {
         setNuevaArea('');
       }
     };
-  
+    const handleKeyPressArea = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddArea();
+      }
+    };
+  */
     const handleRemoveArea = (index: number) => {
       setPropuesta(prev => ({
         ...prev,
@@ -116,18 +196,30 @@ interface PropuestaForm {
       }));
     };
   
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+     // Modifica el handleSubmit para incluir tanto áreas seleccionadas como personalizadas
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    // Combinar áreas seleccionadas y personalizadas
+    const todasLasAreas = [
+      ...areasSeleccionadas.map(area => area.nombre),
+      ...propuesta.areas // Aquí estarán las áreas personalizadas
+    ];
+
     try {
-      const response = await crearPropuesta(propuesta);
+      const propuestaToSend = {
+        ...propuesta,
+        areas: todasLasAreas
+      };
+
+      const response = await crearPropuesta(propuestaToSend);
       console.log('Propuesta creada:', response);
       setSuccess(true);
       setTimeout(() => {
         router.push('/perfil/mispropuestas');
-      }, 2000);
+      }, 100);
     } catch (error) {
       console.error('Error al crear la propuesta:', error);
       setError('Hubo un error al crear la propuesta. Por favor, intente de nuevo.');
@@ -135,6 +227,11 @@ interface PropuestaForm {
       setIsLoading(false);
     }
   };
+   // Manejador para el cambio de áreas seleccionadas
+   const handleAreasChange = (selectedAreas: Area[]) => {
+    setAreasSeleccionadas(selectedAreas);
+  };
+
 
     return (
       <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
@@ -205,19 +302,40 @@ interface PropuestaForm {
           </div>
           
           <div>
-            <label htmlFor="tipo_propuesta" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de Propuesta
             </label>
-            <input
-              id="tipo_propuesta"
-              name="tipo_propuesta"
-              type="text"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={propuesta.tipo_propuesta}
-              onChange={handleChange}
-              placeholder="Ej: TT1, Recursamiento, etc."
-            />
+            <div className="flex space-x-4">
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  id="tt1"
+                  name="tipo_propuesta"
+                  value="TT1"
+                  checked={propuesta.tipo_propuesta === 'TT1'}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  required
+                />
+                <label htmlFor="tt1" className="ml-2 text-sm text-gray-700">
+                  TT1
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  id="remedial"
+                  name="tipo_propuesta"
+                  value="Remedial"
+                  checked={propuesta.tipo_propuesta === 'Remedial'}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <label htmlFor="remedial" className="ml-2 text-sm text-gray-700">
+                  TT Remedial
+                </label>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -227,6 +345,7 @@ interface PropuestaForm {
                 type="text"
                 value={nuevoRequisito}
                 onChange={(e) => setNuevoRequisito(e.target.value)}
+                onKeyPress={handleKeyPressReq}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Nuevo requisito"
               />
@@ -254,38 +373,77 @@ interface PropuestaForm {
             </div>
           </div>
           <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Áreas de Conocimiento</label>
-          <div className="flex space-x-2 mb-2">
-            <input
-              type="text"
-              value={nuevaArea}
-              onChange={(e) => setNuevaArea(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Nueva área de conocimiento"
-            />
-            <button
-              type="button"
-              onClick={handleAddArea}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <PlusCircle size={20} />
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {propuesta.areas.map((area, index) => (
-              <div key={index} className="flex items-center space-x-1 bg-gray-100 px-3 py-1 rounded-full">
-                <span>{area}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveArea(index)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <X size={16} />
-                </button>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Áreas de Conocimiento
+            </label>
+            <div className="relative" ref={areaInputRef}>
+              <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-white min-h-[42px]">
+                {propuesta.areas.map((area, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
+                  >
+                    {area}
+                    <button
+                      onClick={() => handleRemoveArea(index)}
+                      className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  value={areaSearch}
+                  onChange={(e) => {
+                    setAreaSearch(e.target.value);
+                    setIsAreasDropdownOpen(true);
+                  }}
+                  className="flex-1 min-w-[200px] outline-none"
+                  placeholder={propuesta.areas.length === 0 ? "Escribe para buscar o agregar áreas..." : ""}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && areaSearch.trim()) {
+                      e.preventDefault();
+                      handleAddArea(areaSearch);
+                    }
+                  }}
+                />
               </div>
-            ))}
+
+              {isAreasDropdownOpen && areaSearch.trim() && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {areasDisponibles
+                    .filter(area => 
+                      area.nombre.toLowerCase().includes(areaSearch.toLowerCase()) &&
+                      !propuesta.areas.includes(area.nombre)
+                    )
+                    .map(area => (
+                      <div
+                        key={area.id}
+                        className="px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-gray-50"
+                        onClick={() => handleAddArea(area)}
+                      >
+                        <span>{area.nombre}</span>
+                        <Check size={16} className="text-gray-400" />
+                      </div>
+                    ))
+                  }
+                  {!areasDisponibles.some(area => 
+                    area.nombre.toLowerCase() === areaSearch.toLowerCase()
+                  ) && areaSearch.trim() && (
+                    <div
+                      className="px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-gray-50 text-blue-600"
+                      onClick={() => handleAddArea(areaSearch)}
+                    >
+                      <span>Agregar "{areaSearch}"</span>
+                      <PlusCircle size={16} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Palabras Clave</label>
             <div className="flex space-x-2 mb-2">
@@ -293,6 +451,7 @@ interface PropuestaForm {
                 type="text"
                 value={nuevaPalabraClave}
                 onChange={(e) => setNuevaPalabraClave(e.target.value)}
+                onKeyPress={handleKeyPressPalabra}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Nueva palabra clave"
               />
@@ -327,6 +486,7 @@ interface PropuestaForm {
                 type="text"
                 value={nuevoDatoContacto}
                 onChange={(e) => setNuevoDatoContacto(e.target.value)}
+                onKeyPress={handleKeyPressContacto}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Nuevo dato de contacto"
               />

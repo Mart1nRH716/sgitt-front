@@ -30,6 +30,7 @@ interface PropuestaData {
   areas: string[];
   tipo_propuesta: string;
   datos_contacto: string[];
+  visible?: boolean; 
 }
 
 // En Propuesta
@@ -52,6 +53,7 @@ interface Propuesta {
   };
   fecha_creacion: string;
   fecha_actualizacion: string;
+  visible: boolean;
 }
 
 interface Area {
@@ -60,13 +62,7 @@ interface Area {
 }
 
 
-interface ApiResponse {
-  // Define la estructura de tu respuesta API
-  // Esto es solo un ejemplo, ajusta según la respuesta real de tu API
-  token?: string;
-  message?: string;
-  // Agrega otros campos según sea necesario
-}
+
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
   try {
@@ -110,6 +106,7 @@ interface ApiResponse {
   access: string;
   user_type: string;
   user_email: string;
+  primer_inicio: boolean;
 }
 
 export const crearPropuesta = async (propuestaData: PropuestaData): Promise<ApiResponse> => {
@@ -382,6 +379,7 @@ export const obtenerPerfilProfesor = async () => {
 interface ActualizarPerfilData {
   areas_ids?: number[];
   materias_ids?: number[];
+  areas_custom?: string[];
 }
 
 export const actualizarPerfilAlumno = async (data: ActualizarPerfilData) => {
@@ -433,5 +431,74 @@ export const actualizarPerfilProfesor = async (data: ActualizarPerfilData) => {
       throw new Error(error.response?.data?.message || 'Error al actualizar el perfil');
     }
     throw new Error('Error inesperado al actualizar el perfil');
+  }
+};
+
+
+export const actualizarVisibilidad = async (id: number, visible: boolean): Promise<void> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    await axios.patch(
+      `${API_URL}/propuestas/${id}/toggle_visibility/`, 
+      { visible },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error de Axios:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    throw error;
+  }
+};
+
+// En api.ts
+
+interface CambioContrasenaData {
+  password: string;
+  confirmPassword: string;
+}
+
+export const cambiarContrasenaProfesor = async (data: CambioContrasenaData): Promise<ApiResponse> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.post<ApiResponse>(
+      `${API_URL}/cambiar-contrasena-profesor/`,
+      data,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Actualizar tokens en localStorage
+    if (response.data.access) {
+      localStorage.setItem('accessToken', response.data.access);
+    }
+    if (response.data.refresh) {
+      localStorage.setItem('refreshToken', response.data.refresh);
+    }
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error.response?.data?.error || 'Error al cambiar la contraseña';
+    }
+    throw error;
   }
 };

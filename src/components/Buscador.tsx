@@ -18,6 +18,7 @@ interface Profesor {
   apellido_materno: string;
   materias: Materia[];
   areas_profesor: Array<{id: number, nombre: string}>;
+  departamento: string;  
 }
 
 interface BuscadorProps {
@@ -65,51 +66,70 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
           </button>
         </div>
       </form>
-
       <div className='resultadosDiv grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {resultados.map((profesor) => (
-          <div key={profesor.id} className='profesorCard bg-white p-4 rounded-lg shadow-md'>
-            <h3 className='text-lg font-bold'>
-              {`${profesor.nombre} ${profesor.apellido_paterno} ${profesor.apellido_materno}`}
-            </h3>
-            <p>Correo: {profesor.email}</p>
+          <div key={profesor.id} className='profesorCard bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300'>
+            <div className="flex flex-col h-full">
+              <h3 className='text-lg font-bold'>
+                {`${profesor.nombre} ${profesor.apellido_paterno} ${profesor.apellido_materno}`}
+              </h3>
+              
+              {/* Información de contacto y departamento */}
+              <div className="space-y-2 mt-2">
+                <p className="text-gray-600 text-sm">
+                  <span className="font-semibold">Correo:</span> {profesor.email}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <span className="font-semibold">Departamento:</span> {profesor.departamento}
+                </p>
+              </div>
             
-            {/* Materias */}
-            <div className="mt-2">
-              <p className="font-semibold">Materias:</p>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {profesor.materias.map((materia) => (
-                  <span 
-                    key={materia.id}
-                    className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                  >
-                    {materia.nombre}
-                  </span>
-                ))}
+              {/* Materias */}
+              <div className="mt-4">
+                <p className="font-semibold text-gray-700">Materias:</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {profesor.materias.length > 0 ? (
+                    profesor.materias.map((materia) => (
+                      <span 
+                        key={materia.id}
+                        className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                      >
+                        {materia.nombre}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">No hay materias registradas</p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Áreas de conocimiento */}
-            <div className="mt-2">
-              <p className="font-semibold">Áreas de conocimiento:</p>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {profesor.areas_profesor.map((area) => (
-                  <span 
-                    key={area.id}
-                    className="inline-block px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full"
-                  >
-                    {area.nombre}
-                  </span>
-                ))}
+              {/* Áreas de conocimiento */}
+              <div className="mt-4">
+                <p className="font-semibold text-gray-700">Áreas de conocimiento:</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {profesor.areas_profesor && profesor.areas_profesor.length > 0 ? (
+                    profesor.areas_profesor.map((area) => (
+                      <span 
+                        key={area.id}
+                        className="inline-block px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+                      >
+                        {area.nombre}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">No hay áreas de conocimiento registradas</p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <button 
-              className='mt-4 bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors duration-300 w-full'
-              onClick={() => handleContactar(profesor)}
-            >
-              Contactar
-            </button>
+              {/* Botón de contactar */}
+              <button 
+                className='mt-auto bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors duration-300 w-full flex items-center justify-center gap-2'
+                onClick={() => handleContactar(profesor)}
+              >
+                <span>Contactar</span>
+              </button>
+            </div>
           </div>
         ))}
       </div>
