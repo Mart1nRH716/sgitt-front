@@ -70,21 +70,21 @@ interface ApiResponse {
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
   try {
-
     const dataToSend = {
       ...userData,
       areas_custom: userData.areas_custom || [],
     };
 
-    console.log('Datos enviados al servidor:', dataToSend);
     const response = await axios.post<ApiResponse>(`${API_URL}/register/`, dataToSend);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Error de respuesta:', error.response?.data);
-      throw error.response?.data || error.message;
+      if (error.response?.data?.errors) {
+        throw error.response.data;
+      }
+      throw { errors: { general: error.response?.data?.error || error.message } };
     }
-    throw error;
+    throw { errors: { general: "Error inesperado durante el registro" } };
   }
 };
 
