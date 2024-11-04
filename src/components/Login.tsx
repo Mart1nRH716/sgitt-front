@@ -6,6 +6,7 @@ import { UserIcon, KeyIcon, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import CambioContrasenaModal from './CambioContrasenaModal'
 import AgregarAreasModal from './AgregarAreasModal'
+import ForgotPasswordModal from './ForgotPasswordModal'
 
 const Login: React.FC = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
@@ -13,6 +14,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState('')
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAreasModal, setShowAreasModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value })
@@ -94,12 +96,21 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                     {error}
                   </div>
                 )}
+                
                 <button 
                   type="submit"
                   className='bg-oscure w-full p-3 rounded-xl text-white cursor-pointer hover:bg-primary'
                   disabled={isLoading}
                 >
                   {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={() => setShowForgotPasswordModal(true)}
+                  className="text-blue-600 hover:text-blue-800 text-sm mt-2"
+                >
+                  ¿Olvidaste tu contraseña?
                 </button>
               </div>
             </form>
@@ -122,6 +133,14 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   setShowAreasModal(false);
                   window.location.href = '/home';
                 }}
+              />
+            )}
+
+            {/* Añadir el modal al final del componente */}
+            {showForgotPasswordModal && (
+              <ForgotPasswordModal
+                isOpen={showForgotPasswordModal}
+                onClose={() => setShowForgotPasswordModal(false)}
               />
             )}
           </div>
