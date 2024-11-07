@@ -53,13 +53,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
       
       <div className={`
-        transition-all 
-        duration-300
-        ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}
-        ml-0
-      `}>
-        <Footer />
-      </div>
+      transition-all 
+      duration-300
+      ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}
+      ml-0
+    `}>
+      <Footer />
+    </div>
     </div>
   );
 };
