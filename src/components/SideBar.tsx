@@ -35,6 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     if (path === '/home') {
       return pathname === '/home' ? 'active' : '';
     }
+    if (path === '/perfil') {
+      return pathname === '/perfil' ? 'active' : '';
+    }
     return pathname.startsWith(path) ? 'active' : '';
   };
 

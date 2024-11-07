@@ -571,3 +571,27 @@ export const cambiarContraseña = async (data: {
     throw error;
   }
 };
+
+export const buscarAlumnos = async (query: string): Promise<any[]> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+    
+    const response = await axios.get(`${API_URL}/alumnos/buscar/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      params: { q: query }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error de Axios:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    console.error('Error no Axios:', error);
+    throw error;
+  }
+};

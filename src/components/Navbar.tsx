@@ -6,19 +6,22 @@ import { IoMdMenu } from "react-icons/io";
 import { BiSearchAlt } from "react-icons/bi";
 import { AiOutlineMessage } from "react-icons/ai";
 import { FiBell } from "react-icons/fi";
+import { usePathname } from 'next/navigation';
 
 interface NavbarProps {
   toggleSidebar: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const pathname = usePathname();
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/buscador?q=${encodeURIComponent(searchQuery.trim())}`);
+  const getPageTitle = (path: string) => {
+    switch(path) {
+      case '/home': return 'Inicio';
+      case '/perfil': return 'Mi Perfil';
+      case '/perfil/mispropuestas': return 'Mis Propuestas';
+      case '/ayuda': return 'Ayuda';
+      default: return 'SGITT';
     }
   };
 
@@ -32,22 +35,9 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
             SGI<span className='text-secondary'>TT</span>
           </h1>
         </Link>
-
-        <form onSubmit={handleSearch} className='flex-1 max-w-xl hidden md:flex items-center relative'>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder='Buscar propuestas...'
-            className='w-full py-2 px-4 pr-12 rounded-lg bg-gray-100 border border-secondary outline-none focus:ring-2 focus:ring-primary transition-all'
-          />
-          <button
-            type="submit"
-            className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors'
-          >
-            <BiSearchAlt className='text-xl' />
-          </button>
-        </form>
+        <h1 className="text-xl font-semibold text-secondary">
+            {getPageTitle(pathname)}
+          </h1>
 
         <div className='flex items-center gap-4 ml-auto'>
           <Link href="/chat" className='relative text-secondary hover:text-primary transition-colors'>
