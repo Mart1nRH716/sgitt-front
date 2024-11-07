@@ -6,6 +6,7 @@ import { MdOutlineCancel } from "react-icons/md";
 import { buscarProfesores, buscarAlumnos } from '../app/utils/api';
 import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { GiSharkFin } from "react-icons/gi";
+import { AiOutlineInfoCircle } from 'react-icons/ai';
 
 interface Materia {
   id: number;
@@ -44,6 +45,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   const [userType, setUserType] = useState<'alumno' | 'profesor' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     const storedUserType = localStorage.getItem('user-Type') as 'alumno' | 'profesor';
@@ -54,6 +56,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setHasSearched(true);
     try {
       if (userType === 'alumno') {
         const profesores = await buscarProfesores(buscar);
@@ -178,6 +181,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   return (
     
       <div className='bg-secondary rounded-lg p-4 sm:p-6 lg:p-8 space-y-6 mt-4 mx-auto max-w-7xl w-full '>
+        
         {/* Formulario de búsqueda */}
         <form onSubmit={handleSearch} className='w-full'>
           <div className='flex flex-col sm:flex-row items-center rounded-xl gap-4 p-4 sm:p-5 shadow-md bg-white'>
@@ -198,6 +202,27 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
                   onClick={() => setBuscar('')}
                 />
               )}
+              {/* Info Button - Repositioned and Restyled */}
+          <div className="relative inline-flex items-center group ml-2">
+            <button
+              type="button"
+              aria-label="Información de búsqueda"
+              className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <AiOutlineInfoCircle className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors duration-200" />
+            </button>
+            
+            <div className="absolute hidden group-hover:block w-72 p-4 bg-white border border-gray-200 rounded-lg shadow-lg right-0 top-8 z-50 transition-all duration-200 ease-in-out">
+              <div className="relative">
+                <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-t border-l border-gray-200 transform rotate-45"></div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Busca {userType === 'alumno' ? 'profesores': 'alumnos'} usando palabras clave, áreas de conocimiento o materias.
+                  Entre más específica sea tu búsqueda, mejores resultados obtendrás.
+                </p>
+              </div>
+            </div>
+          </div>
+
             </div>
             <button
               type="submit"
@@ -210,6 +235,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
             </button>
           </div>
         </form>
+        
 
         {/* Mensajes de error */}
         {error && (
@@ -224,7 +250,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
             {resultados.map(renderResultado)}
           </div>
         ) : (
-          buscar && !isLoading && (
+          hasSearched && !isLoading && (
             <div className="flex flex-col items-center justify-center py-12">
               <GiSharkFin className="text-6xl text-gray-400 mb-4" />
               <p className="text-xl text-gray-500 text-center">
