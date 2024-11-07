@@ -502,3 +502,77 @@ export const cambiarContrasenaProfesor = async (data: CambioContrasenaData): Pro
     throw error;
   }
 };
+
+// Funciones para el CRUD de administrador
+// src/app/utils/api.ts
+
+export const getAdminData = async (type: 'alumnos' | 'profesores' | 'propuestas') => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+
+    // Actualizar la ruta para usar el prefijo crud
+    const endpoint = `crud/${type}`;
+    
+    const response = await axios.get(`${API_URL}/${endpoint}/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching data:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    throw error;
+  }
+};
+
+// También actualiza updateAdminItem
+export const updateAdminItem = async (type: 'alumnos' | 'profesores' | 'propuestas', id: number, data: any) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+
+    const endpoint = `crud/${type}/${id}`;
+    
+    const response = await axios.put(`${API_URL}/${endpoint}/`, data, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error updating item:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    throw error;
+  }
+};
+
+// Y también deleteAdminItem
+export const deleteAdminItem = async (type: 'alumnos' | 'profesores' | 'propuestas', id: number) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+
+    const endpoint = `crud/${type}/${id}`;
+    
+    await axios.delete(`${API_URL}/${endpoint}/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error deleting item:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+    throw error;
+  }
+};

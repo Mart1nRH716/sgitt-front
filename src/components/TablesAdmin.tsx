@@ -1,279 +1,508 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
-import {
-  FaSchool,
-  FaChalkboardTeacher,
-  FaUserGraduate,
-  FaBook,
-  FaFileAlt
-} from 'react-icons/fa';
-import { 
-  fetchAdminStats, 
-  fetchAdminData, 
-  deleteAdminEntity,
-  updateAdminEntity,
-  createAdminEntity 
-} from '../app/utils/adminApi';
-// Tipos para las diferentes entidades
+import React, { useEffect, useState } from "react";
+import { Search, Download, Edit, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { getAdminData, updateAdminItem, deleteAdminItem } from '../app/utils/api';
+
+interface Profesor {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  departamento: string;
+  es_profesor: boolean;
+  materias: Array<{id: number; nombre: string}>;
+  areas_profesor: Array<{id: number; nombre: string}>;
+  primer_inicio: boolean;
+}
+
+interface Alumno {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  boleta: string;
+  carrera: string;
+  plan_estudios: string;
+}
+
 interface Propuesta {
   id: number;
   nombre: string;
   objetivo: string;
   tipo_propuesta: string;
+  autor: {
+    nombre: string;
+    email: string;
+    tipo: string;
+  };
+  fecha_creacion: string;
+  visible: boolean;
 }
 
-interface Usuario {
-  id: number;
-  email: string;
-  nombre: string;
-  tipo: string;
-}
-
-interface Area {
-  id: number;
-  nombre: string;
-}
-
-interface StatsCard {
-  title: string;
-  value: number;
-  change: number;
-  icon: JSX.Element;
-}
+type TabType = 'alumnos' | 'profesores' | 'propuestas';
 
 const TablesAdmin = () => {
-  const [activeTab, setActiveTab] = useState<'propuestas' | 'usuarios' | 'areas'>('propuestas');
+  const [activeTab, setActiveTab] = useState<TabType>('alumnos');
+  const [data, setData] = useState<Array<any>>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState<StatsCard[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Configuración de los CRUDs disponibles
-  const cruds = [
-    { 
-      id: 'propuestas', 
-      name: 'Propuestas', 
-      icon: <FaFileAlt className="text-3xl" />,
-      columns: ['ID', 'Nombre', 'Tipo', 'Objetivo', 'Acciones']
-    },
-    { 
-      id: 'usuarios', 
-      name: 'Usuarios', 
-      icon: <FaUserGraduate className="text-3xl" />,
-      columns: ['ID', 'Email', 'Nombre', 'Tipo', 'Acciones']
-    },
-    { 
-      id: 'areas', 
-      name: 'Áreas', 
-      icon: <FaBook className="text-3xl" />,
-      columns: ['ID', 'Nombre', 'Acciones']
+  const exportToCSV = () => {
+    let csvContent = '';
+    let headers: string[] = [];
+    
+    // Definir headers según el tab activo
+    if (activeTab === 'alumnos') {
+      headers = ['Email', 'Nombre', 'Apellido Paterno', 'Apellido Materno', 'Boleta', 'Carrera'];
+    } else if (activeTab === 'profesores') {
+      headers = ['Email', 'Nombre', 'Apellido Paterno', 'Apellido Materno', 'Departamento'];
+    } else {
+      headers = ['Nombre', 'Tipo', 'Autor', 'Fecha'];
     }
-  ];
 
-  // Estadísticas para el panel lateral
-  const statsCards: StatsCard[] = [
-    {
-      title: "Total Propuestas",
-      value: 150,
-      change: 12,
-      icon: <FaFileAlt className="w-6 h-6" />
-    },
-    {
-      title: "Usuarios Activos",
-      value: 320,
-      change: 5,
-      icon: <FaUserGraduate className="w-6 h-6" />
-    },
-    {
-      title: "Áreas Registradas",
-      value: 45,
-      change: 2,
-      icon: <FaBook className="w-6 h-6" />
-    }
-  ];
+    // Agregar headers
+    csvContent += headers.join(',') + '\n';
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [statsData, entityData] = await Promise.all([
-          fetchAdminStats(),
-          fetchAdminData(activeTab, searchTerm)
-        ]);
-        
-        // Actualizar estadísticas
-        const updatedStats = [
-          {
-            title: "Total Propuestas",
-            value: statsData.propuestas.total,
-            change: statsData.propuestas.growth,
-            icon: <FaFileAlt className="w-6 h-6" />
-          },
-          {
-            title: "Usuarios Activos",
-            value: statsData.users.total,
-            change: statsData.users.growth,
-            icon: <FaUserGraduate className="w-6 h-6" />
-          },
-          {
-            title: "Distribución Usuario",
-            value: `${statsData.users.alumnos}/${statsData.users.profesores}`,
-            change: 0,
-            icon: <FaBook className="w-6 h-6" />
-          }
+    // Agregar datos
+    filterData().forEach((item) => {
+      let row: string[] = [];
+      if (activeTab === 'alumnos') {
+        row = [
+          item.email,
+          item.nombre,
+          item.apellido_paterno,
+          item.apellido_materno,
+          item.boleta,
+          item.carrera
         ];
-        
-        setStats(updatedStats);
-        setData(entityData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
+      } else if (activeTab === 'profesores') {
+        row = [
+          item.email,
+          item.nombre,
+          item.apellido_paterno,
+          item.apellido_materno,
+          item.departamento || 'No asignado'
+        ];
+      } else {
+        row = [
+          item.nombre,
+          item.tipo_propuesta,
+          item.autor?.nombre || 'No disponible',
+          new Date(item.fecha_creacion).toLocaleDateString()
+        ];
       }
-    };
+      csvContent += row.join(',') + '\n';
+    });
 
-    loadData();
-  }, [activeTab, searchTerm]);
+    // Crear y descargar el archivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${activeTab}_${new Date().toISOString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este elemento?')) {
-      try {
-        await deleteAdminEntity(activeTab, id);
-        // Recargar datos después de eliminar
-        const newData = await fetchAdminData(activeTab, searchTerm);
-        setData(newData);
-      } catch (error) {
-        console.error('Error deleting item:', error);
+  const handleEdit = async (item: any) => {
+    try {
+      const formFields = generateFormFields(item);
+      const { value: formValues } = await Swal.fire({
+        title: 'Editar',
+        html: formFields.html,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => formFields.getValues()
+      });
+
+      if (formValues) {
+        await updateAdminItem(activeTab, item.id, formValues);
+        await fetchData();
+        await Swal.fire('¡Actualizado!', 'Los cambios han sido guardados.', 'success');
       }
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+      Swal.fire('Error', 'No se pudieron guardar los cambios', 'error');
     }
   };
 
-  const filteredData = data.filter(item => {
-    const searchValue = searchTerm.toLowerCase();
-    return (
-      item.nombre?.toLowerCase().includes(searchValue) ||
-      item.email?.toLowerCase().includes(searchValue) ||
-      item.tipo_propuesta?.toLowerCase().includes(searchValue)
-    );
-  });
+  const handleDelete = async (id: number) => {
+    try {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        await deleteAdminItem(activeTab, id);
+        await fetchData();
+        await Swal.fire('¡Eliminado!', 'El elemento ha sido eliminado.', 'success');
+      }
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      Swal.fire('Error', 'No se pudo eliminar el elemento', 'error');
+    }
+  };
+
+  const generateFormFields = (item: any) => {
+    if (activeTab === 'alumnos') {
+      return {
+        html: `
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input id="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.email}">
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+            <input id="nombre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.nombre}">
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Boleta</label>
+            <input id="boleta" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.boleta}">
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Carrera</label>
+            <select id="carrera" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+              <option value="ISC" ${item.carrera === 'ISC' ? 'selected' : ''}>Ing. en Sistemas Computacionales</option>
+              <option value="LCD" ${item.carrera === 'LCD' ? 'selected' : ''}>Lic. en Ciencia de Datos</option>
+              <option value="IIA" ${item.carrera === 'IIA' ? 'selected' : ''}>Ing. en Inteligencia Artificial</option>
+            </select>
+          </div>
+        `,
+        getValues: () => ({
+          email: (document.getElementById('email') as HTMLInputElement).value,
+          nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+          boleta: (document.getElementById('boleta') as HTMLInputElement).value,
+          carrera: (document.getElementById('carrera') as HTMLSelectElement).value,
+        })
+      };
+    }
+
+    if (activeTab === 'profesores') {
+      return {
+        html: `
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input id="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.email}">
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+            <input id="nombre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.nombre}">
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Departamento</label>
+            <input id="departamento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.departamento}">
+          </div>
+        `,
+        getValues: () => ({
+          email: (document.getElementById('email') as HTMLInputElement).value,
+          nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+          departamento: (document.getElementById('departamento') as HTMLInputElement).value,
+        })
+      };
+    }
+
+    return {
+      html: `
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">Nombre</label>
+          <input id="nombre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item.nombre}">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">Tipo</label>
+          <select id="tipo_propuesta" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="TT1" ${item.tipo_propuesta === 'TT1' ? 'selected' : ''}>TT1</option>
+            <option value="TT2" ${item.tipo_propuesta === 'TT2' ? 'selected' : ''}>TT2</option>
+            <option value="Remedial" ${item.tipo_propuesta === 'Remedial' ? 'selected' : ''}>Remedial</option>
+          </select>
+        </div>
+      `,
+      getValues: () => ({
+        nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+        tipo_propuesta: (document.getElementById('tipo_propuesta') as HTMLSelectElement).value,
+      })
+    };
+  };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await getAdminData(activeTab);
+      console.log(`Datos de ${activeTab}:`, response);
+      console.log('Estructura del primer item:', response[0]);
+      
+      if (!Array.isArray(response)) {
+        console.error('La respuesta no es un array:', response);
+        setData([]);
+        setError('Error en el formato de datos');
+        return;
+      }
+      
+      setData(response);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Error al cargar los datos');
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  const filterData = () => {
+    if (!data || !Array.isArray(data)) return [];
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    return data.filter((item: any) => {
+      if (activeTab === 'profesores') {
+        return (
+          item.email?.toLowerCase().includes(searchLower) ||
+          item.nombre?.toLowerCase().includes(searchLower) ||
+          item.apellido_paterno?.toLowerCase().includes(searchLower) ||
+          item.departamento?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (activeTab === 'alumnos') {
+        return (
+          item.email?.toLowerCase().includes(searchLower) ||
+          item.nombre?.toLowerCase().includes(searchLower) ||
+          item.apellido_paterno?.toLowerCase().includes(searchLower) ||
+          item.boleta?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (activeTab === 'propuestas') {
+        return (
+          item.nombre?.toLowerCase().includes(searchLower) ||
+          item.objetivo?.toLowerCase().includes(searchLower) ||
+          item.autor?.nombre?.toLowerCase().includes(searchLower) ||
+          item.autor?.email?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return false;
+    });
+  };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header con búsqueda */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Administración de {activeTab}</h2>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2">
-            <Plus size={20} />
-            Nuevo
-          </button>
+    <div className="p-6">
+      {/* Tabs */}
+      <div className="flex space-x-4 mb-6">
+        <button
+          onClick={() => setActiveTab('alumnos')}
+          className={`px-4 py-2 rounded-lg ${
+            activeTab === 'alumnos' ? 'bg-primary text-white' : 'bg-gray-200'
+          }`}
+        >
+          Alumnos
+        </button>
+        <button
+          onClick={() => setActiveTab('profesores')}
+          className={`px-4 py-2 rounded-lg ${
+            activeTab === 'profesores' ? 'bg-primary text-white' : 'bg-gray-200'
+          }`}
+        >
+          Profesores
+        </button>
+        <button
+          onClick={() => setActiveTab('propuestas')}
+          className={`px-4 py-2 rounded-lg ${
+            activeTab === 'propuestas' ? 'bg-primary text-white' : 'bg-gray-200'
+          }`}
+        >
+          Propuestas
+        </button>
+      </div>
+
+      {/* Barra de búsqueda y exportación */}
+      <div className="flex mb-6 gap-4">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border rounded-lg"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
+        <button
+          onClick={exportToCSV}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+          title="Exportar a CSV"
+        >
+          <Download size={18} />
+          <span>Exportar CSV</span>
+        </button>
       </div>
 
-      {/* Selector de CRUD */}
-      <div className="grid grid-cols-3 gap-4">
-        {cruds.map((crud) => (
-          <button
-            key={crud.id}
-            onClick={() => setActiveTab(crud.id as any)}
-            className={`p-4 rounded-lg flex items-center gap-4 transition-colors ${
-              activeTab === crud.id 
-                ? 'bg-primary text-white' 
-                : 'bg-gray-100 hover:bg-gray-200'
-            }`}
-          >
-            {crud.icon}
-            <span className="font-medium">{crud.name}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Tabla de datos */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+      {/* Tabla */}
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {activeTab === 'alumnos' && (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Boleta</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Carrera</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </>
+              )}
+              {activeTab === 'profesores' && (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Departamento</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </>
+              )}
+              {activeTab === 'propuestas' && (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Autor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </>
+              )}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
               <tr>
-                {cruds.find(c => c.id === activeTab)?.columns.map((column) => (
-                  <th key={column} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {column}
-                  </th>
-                ))}
+                <td colSpan={6} className="px-6 py-4 text-center">
+                  <div className="flex justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-4">Cargando...</td>
-                </tr>
-              ) : filteredData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">{item.id}</td>
-                  <td className="px-6 py-4">{item.nombre || item.email}</td>
+            ) : (
+              filterData().map((item: any) => (
+                <tr key={item.id}>
+                  {activeTab === 'alumnos' && (
+                    <>
+                      <td className="px-6 py-4">{item.email}</td>
+                      <td className="px-6 py-4">
+                        {`${item.nombre} ${item.apellido_paterno} ${item.apellido_materno}`}
+                      </td>
+                      <td className="px-6 py-4">{item.boleta}</td>
+                      <td className="px-6 py-4">{item.carrera}</td>
+                      <td className="px-6 py-4 flex gap-2">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="text-blue-600 hover:text-blue-900 p-2"
+                          title="Editar alumno"
+                          aria-label="Editar alumno"
+                        >
+                          <Edit size={18} />
+                          <span className="sr-only">Editar</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-600 hover:text-red-900 p-2"
+                          title="Eliminar alumno"
+                          aria-label="Eliminar alumno"
+                        >
+                          <Trash2 size={18} />
+                          <span className="sr-only">Eliminar</span>
+                        </button>
+                      </td>
+                    </>
+                  )}
+
+                  {activeTab === 'profesores' && (
+                    <>
+                      <td className="px-6 py-4">{item.email}</td>
+                      <td className="px-6 py-4">
+                        {`${item.nombre} ${item.apellido_paterno} ${item.apellido_materno}`}
+                      </td>
+                      <td className="px-6 py-4">{item.departamento || 'No asignado'}</td>
+                      <td className="px-6 py-4 flex gap-2">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="text-blue-600 hover:text-blue-900 p-2"
+                          title="Editar profesor"
+                          aria-label="Editar profesor"
+                        >
+                          <Edit size={18} />
+                          <span className="sr-only">Editar</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-600 hover:text-red-900 p-2"
+                          title="Eliminar profesor"
+                          aria-label="Eliminar profesor"
+                        >
+                          <Trash2 size={18} />
+                          <span className="sr-only">Eliminar</span>
+                        </button>
+                      </td>
+                    </>
+                  )}
+
                   {activeTab === 'propuestas' && (
                     <>
-                      <td className="px-6 py-4">{item.tipo_propuesta}</td>
-                      <td className="px-6 py-4">{item.objetivo}</td>
-                    </>
-                  )}
-                  {activeTab === 'usuarios' && (
-                    <>
                       <td className="px-6 py-4">{item.nombre}</td>
-                      <td className="px-6 py-4">{item.tipo}</td>
+                      <td className="px-6 py-4">{item.tipo_propuesta}</td>
+                      <td className="px-6 py-4">{item.autor?.nombre || 'No disponible'}</td>
+                      <td className="px-6 py-4">
+                        {item.fecha_creacion ? 
+                          new Date(item.fecha_creacion).toLocaleDateString() : 
+                          'No disponible'
+                        }
+                      </td>
+                      <td className="px-6 py-4 flex gap-2">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="text-blue-600 hover:text-blue-900 p-2"
+                          title="Editar propuesta"
+                          aria-label="Editar propuesta"
+                        >
+                          <Edit size={18} />
+                          <span className="sr-only">Editar</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-600 hover:text-red-900 p-2"
+                          title="Eliminar propuesta"
+                          aria-label="Eliminar propuesta"
+                        >
+                          <Trash2 size={18} />
+                          <span className="sr-only">Eliminar</span>
+                        </button>
+                      </td>
                     </>
                   )}
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit2 size={18} className="text-blue-500" />
-                      </button>
-                      <button 
-                        className="p-1 hover:bg-gray-100 rounded"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <Trash2 size={18} className="text-red-500" />
-                      </button>
-                    </div>
-                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Panel lateral de estadísticas */}
-      <div className="grid grid-cols-3 gap-4">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{stat.title}</p>
-                <p className="text-2xl font-semibold">{stat.value}</p>
-              </div>
-              <div className={`p-3 rounded-full ${
-                stat.change > 0 ? 'bg-green-100' : 'bg-red-100'
-              }`}>
-                {stat.icon}
-              </div>
-            </div>
-            <div className={`mt-2 text-sm ${
-              stat.change > 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {stat.change > 0 ? '+' : ''}{stat.change}% desde el último mes
-            </div>
+              ))
+            )}
+          </tbody>
+        </table>
+        {!loading && filterData().length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No se encontraron resultados
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
