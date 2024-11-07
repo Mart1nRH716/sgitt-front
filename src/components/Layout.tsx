@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className={`
         transition-all 
         duration-300 
-        pt-16
+        pt-5
         ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}
         ml-0
       `}>
