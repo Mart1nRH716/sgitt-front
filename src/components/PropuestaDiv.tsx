@@ -436,9 +436,7 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
                 <button className='bg-primary text-white px-4 py-2 rounded hover:bg-primary/80'>
                   Contactar
                 </button>
-                <button className='bg-secondary text-white px-4 py-2 rounded hover:bg-secondary/80'>
-                  Guardar
-                </button>
+                
               </div>
             </div>
           ) : null}
