@@ -528,50 +528,122 @@ export const getAdminData = async (type: 'alumnos' | 'profesores' | 'propuestas'
     throw error;
   }
 };
-
-// También actualiza updateAdminItem
+// En src/app/utils/api.ts
 export const updateAdminItem = async (type: 'alumnos' | 'profesores' | 'propuestas', id: number, data: any) => {
   try {
+    console.log(`Intentando actualizar ${type} con ID:`, id, 'Datos:', data);
+    
     const token = localStorage.getItem('accessToken');
     if (!token) {
       throw new Error('No se encontró el token de acceso');
     }
 
-    const endpoint = `crud/${type}/${id}`;
-    
-    const response = await axios.put(`${API_URL}/${endpoint}/`, data, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    let endpoint = '';
+    let formattedData = { ...data };
+
+    // Formatear datos específicamente para alumnos
+    if (type === 'alumnos') {
+      endpoint = `/crud/alumnos/${id}/`; // Cambiado de crud/alumnos a alumnos
+      formattedData = {
+        email: data.email,
+        nombre: data.nombre,
+        apellido_paterno: data.apellido_paterno,
+        apellido_materno: data.apellido_materno,
+        boleta: data.boleta,
+        carrera: data.carrera,
+        plan_estudios: data.plan_estudios,
+        password: data.password,
+        confirm_password: data.confirm_password,
+        user: {
+          id: id,
+          email: data.email,
+          first_name: data.nombre,
+          last_name: data.apellido_paterno
+        }
+      };
+      console.log('Datos formateados para alumno:', formattedData);
+    } else if (type === 'profesores') {
+      endpoint = `/crud/profesores/${id}/`;
+      formattedData = {
+        ...data,
+        user: {
+          email: data.email,
+          first_name: data.nombre,
+          last_name: data.apellido_paterno,
+        }
+      };
+    } else {
+      endpoint = `/crud/propuestas/${id}/`;
+    }
+
+    console.log('Datos formateados para enviar:', formattedData);
+
+    const response = await axios.put(
+      `${API_URL}${endpoint}`,
+      formattedData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       }
-    });
+    );
+
     return response.data;
   } catch (error) {
+    console.error(`Error actualizando ${type}:`, error);
     if (axios.isAxiosError(error)) {
-      console.error('Error updating item:', error.response?.data);
-      throw error.response?.data || error.message;
+      console.log('URL que causó el error:', error.config?.url);
+      console.log('Datos enviados:', error.config?.data);
     }
     throw error;
   }
 };
 
-// Y también deleteAdminItem
 export const deleteAdminItem = async (type: 'alumnos' | 'profesores' | 'propuestas', id: number) => {
   try {
+    if (!id) {
+      throw new Error('ID no proporcionado');
+    }
+
+    console.log(`Intentando eliminar ${type} con ID:`, id);
+    
     const token = localStorage.getItem('accessToken');
     if (!token) {
       throw new Error('No se encontró el token de acceso');
     }
 
-    const endpoint = `crud/${type}/${id}`;
-    
-    await axios.delete(`${API_URL}/${endpoint}/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    // Ajustar las rutas según tu backend
+    let endpoint = '';
+    switch (type) {
+      case 'alumnos':
+        endpoint = `/crud/alumnos/${id}/`; // Removido /delete/
+        break;
+      case 'profesores':
+        endpoint = `/crud/profesores/${id}/`; // Removido /delete/
+        break;
+      case 'propuestas':
+        endpoint = `/crud/propuestas/${id}/`; // Removido /delete/
+        break;
+    }
+
+    console.log('URL completa:', `${API_URL}${endpoint}`);
+
+    const response = await axios.delete(
+      `${API_URL}${endpoint}`,
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    );
+
+    return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Error deleting item:', error.response?.data);
-      throw error.response?.data || error.message;
+      console.log('URL que causó el error:', error.config?.url);
+      console.log('Respuesta del servidor:', error.response?.data);
+      throw new Error(`Error al eliminar: ${error.response?.status} - ${error.response?.statusText}`);
     }
     throw error;
   }

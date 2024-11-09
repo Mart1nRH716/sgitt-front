@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Search, Download, Edit, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getAdminData, updateAdminItem, deleteAdminItem } from '../app/utils/api';
+import axios from "axios";
 
 interface Profesor {
   id: number;
@@ -43,7 +44,16 @@ interface Propuesta {
 
 type TabType = 'alumnos' | 'profesores' | 'propuestas';
 
-const TablesAdmin = () => {
+interface TablesAdminProps {
+  activeTab2: string;
+  onTabChange?: (tab: string) => void;
+}
+const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) => {
+  useEffect(() => {
+    if (activeTab2) {
+      setActiveTab(activeTab2 as TabType);
+    }
+  }, [activeTab2]);
   const [activeTab, setActiveTab] = useState<TabType>('alumnos');
   const [data, setData] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
@@ -108,53 +118,241 @@ const TablesAdmin = () => {
     document.body.removeChild(link);
   };
 
-  const handleEdit = async (item: any) => {
-    try {
-      const formFields = generateFormFields(item);
-      const { value: formValues } = await Swal.fire({
-        title: 'Editar',
-        html: formFields.html,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar',
-        cancelButtonText: 'Cancelar',
-        preConfirm: () => formFields.getValues()
-      });
+// En src/components/TablesAdmin.tsx
 
-      if (formValues) {
-        await updateAdminItem(activeTab, item.id, formValues);
-        await fetchData();
-        await Swal.fire('¡Actualizado!', 'Los cambios han sido guardados.', 'success');
-      }
-    } catch (error) {
-      console.error('Error al actualizar:', error);
-      Swal.fire('Error', 'No se pudieron guardar los cambios', 'error');
+const handleEdit = async (item: any) => {
+  try {
+
+    const itemId = activeTab === 'alumnos' ? item.id : item.id;
+    
+    console.log('Item completo a editar:', item);
+    console.log('ID del item:', item.id);
+    console.log('Tipo activo:', activeTab);
+
+    let formFields;
+    if (activeTab === 'alumnos') {
+      formFields = {
+        html: `
+          <div class="grid grid-cols-1 gap-4">
+          <input type="hidden" id="user_id" value="${itemId}" />
+          <input type="hidden" id="password" value="${item.password}" />
+          <input type="hidden" id="confirmPassword" value="${item.password}" />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <input id="nombre" class="w-full px-3 py-2 border rounded-md" value="${item.nombre || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
+              <input id="apellido_paterno" class="w-full px-3 py-2 border rounded-md" value="${item.apellido_paterno || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
+              <input id="apellido_materno" class="w-full px-3 py-2 border rounded-md" value="${item.apellido_materno || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input id="email" type="email" class="w-full px-3 py-2 border rounded-md" value="${item.email || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
+              <input id="boleta" class="w-full px-3 py-2 border rounded-md" value="${item.boleta || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Carrera</label>
+              <select id="carrera" class="w-full px-3 py-2 border rounded-md">
+                <option value="ISC" ${item.carrera === 'ISC' ? 'selected' : ''}>Sistemas Computacionales</option>
+                <option value="LCD" ${item.carrera === 'LCD' ? 'selected' : ''}>Ciencia de Datos</option>
+                <option value="IIA" ${item.carrera === 'IIA' ? 'selected' : ''}>Inteligencia Artificial</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Plan de Estudios</label>
+              <select id="plan_estudios" class="w-full px-3 py-2 border rounded-md">
+                <option value="2009" ${item.plan_estudios === '2009' ? 'selected' : ''}>2009</option>
+                <option value="2020" ${item.plan_estudios === '2020' ? 'selected' : ''}>2020</option>
+              </select>
+            </div>
+          </div>
+        `
+      };
+    } else if (activeTab === 'profesores') {
+      formFields = {
+        html: `
+          <div class="grid grid-cols-1 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <input id="nombre" class="w-full px-3 py-2 border rounded-md" value="${item.nombre || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
+              <input id="apellido_paterno" class="w-full px-3 py-2 border rounded-md" value="${item.apellido_paterno || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
+              <input id="apellido_materno" class="w-full px-3 py-2 border rounded-md" value="${item.apellido_materno || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input id="email" type="email" class="w-full px-3 py-2 border rounded-md" value="${item.email || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+              <select id="departamento" class="w-full px-3 py-2 border rounded-md">
+                <option value="CIC" ${item.departamento === 'CIC' ? 'selected' : ''}>CIC</option>
+                <option value="FB" ${item.departamento === 'FB' ? 'selected' : ''}>FB</option>
+                <option value="FII" ${item.departamento === 'FII' ? 'selected' : ''}>FII</option>
+                <option value="ISC" ${item.departamento === 'ISC' ? 'selected' : ''}>ISC</option>
+                <option value="POSGR" ${item.departamento === 'POSGR' ? 'selected' : ''}>POSGR</option>
+                <option value="SUB ACAD" ${item.departamento === 'SUB ACAD' ? 'selected' : ''}>SUB ACAD</option>
+              </select>
+            </div>
+          </div>
+        `
+      };
+    } else {
+      formFields = {
+        html: `
+          <div class="grid grid-cols-1 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <input id="nombre" class="w-full px-3 py-2 border rounded-md" value="${item.nombre || ''}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
+              <textarea id="objetivo" class="w-full px-3 py-2 border rounded-md" rows="3">${item.objetivo || ''}</textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Alumnos</label>
+              <input id="cantidad_alumnos" type="number" min="1" class="w-full px-3 py-2 border rounded-md" value="${item.cantidad_alumnos || 1}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Profesores</label>
+              <input id="cantidad_profesores" type="number" min="1" class="w-full px-3 py-2 border rounded-md" value="${item.cantidad_profesores || 1}" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Propuesta</label>
+              <select id="tipo_propuesta" class="w-full px-3 py-2 border rounded-md">
+                <option value="TT1" ${item.tipo_propuesta === 'TT1' ? 'selected' : ''}>TT1</option>
+                <option value="Remedial" ${item.tipo_propuesta === 'Remedial' ? 'selected' : ''}>Remedial</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Visible</label>
+              <select id="visible" class="w-full px-3 py-2 border rounded-md">
+                <option value="true" ${item.visible ? 'selected' : ''}>Sí</option>
+                <option value="false" ${!item.visible ? 'selected' : ''}>No</option>
+              </select>
+            </div>
+          </div>
+        `
+      };
     }
-  };
 
-  const handleDelete = async (id: number) => {
-    try {
-      const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: "Esta acción no se puede deshacer",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-      });
-
-      if (result.isConfirmed) {
-        await deleteAdminItem(activeTab, id);
-        await fetchData();
-        await Swal.fire('¡Eliminado!', 'El elemento ha sido eliminado.', 'success');
+    const result = await Swal.fire({
+      title: 'Editar',
+      html: formFields.html,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const values: any = {};
+        
+        if (activeTab === 'alumnos') {
+            values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
+            values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
+            values.email = (document.getElementById('email') as HTMLInputElement).value;
+            values.boleta = (document.getElementById('boleta') as HTMLInputElement).value;
+            values.carrera = (document.getElementById('carrera') as HTMLSelectElement).value;
+            values.plan_estudios = (document.getElementById('plan_estudios') as HTMLSelectElement).value;
+            values.password = (document.getElementById('password') as HTMLInputElement).value;
+            values.confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement).value;
+            values.user = {
+                email: values.email,
+                first_name: values.nombre,
+                last_name: values.apellido_paterno
+            };
+        } else if (activeTab === 'profesores') {
+            values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
+            values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
+            values.email = (document.getElementById('email') as HTMLInputElement).value;
+            values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
+            values.user = {
+                email: values.email,
+                first_name: values.nombre,
+                last_name: values.apellido_paterno
+            };
+        } else if (activeTab === 'propuestas') {
+            values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            values.objetivo = (document.getElementById('objetivo') as HTMLTextAreaElement).value;
+            values.cantidad_alumnos = parseInt((document.getElementById('cantidad_alumnos') as HTMLInputElement).value);
+            values.cantidad_profesores = parseInt((document.getElementById('cantidad_profesores') as HTMLInputElement).value);
+            values.tipo_propuesta = (document.getElementById('tipo_propuesta') as HTMLSelectElement).value;
+            values.visible = (document.getElementById('visible') as HTMLSelectElement).value === 'true';
+        }
+        
+        return values;
       }
-    } catch (error) {
-      console.error('Error al eliminar:', error);
-      Swal.fire('Error', 'No se pudo eliminar el elemento', 'error');
+    });
+
+    if (result.isConfirmed && result.value) {
+      console.log('Datos a enviar en la actualización:', {
+        ...result.value,
+        user_id: itemId
+      });
+      const updatedItem = await updateAdminItem(activeTab, itemId, result.value);
+      console.log('Respuesta de la actualización:', updatedItem);
+      
+      await fetchData();
+      Swal.fire('¡Actualizado!', 'Los cambios han sido guardados.', 'success');
     }
-  };
+  } catch (error) {
+    console.error('Error al editar:', error);
+    let errorMessage = 'No se pudieron guardar los cambios';
+    if (axios.isAxiosError(error)) {
+      errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+      console.log('Detalles del error:', error.response?.data);
+    }
+    Swal.fire('Error', errorMessage, 'error');
+  }
+};
+
+const handleDelete = async (id: number) => {
+  try {
+    console.log('Intentando eliminar item:', {
+      tipo: activeTab,
+      id: id
+    });
+
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Esta acción no se puede deshacer",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      console.log('Procediendo con la eliminación...');
+      await deleteAdminItem(activeTab, id);
+      console.log('Eliminación completada');
+      await fetchData();
+      Swal.fire('¡Eliminado!', 'El elemento ha sido eliminado.', 'success');
+    }
+  } catch (error) {
+    console.error('Error en la eliminación:', error);
+    let errorMessage = 'No se pudo eliminar el elemento';
+    if (axios.isAxiosError(error)) {
+      errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+      console.log('Detalles del error:', error.response?.data);
+    }
+    Swal.fire('Error', errorMessage, 'error');
+  }
+};
 
   const generateFormFields = (item: any) => {
     if (activeTab === 'alumnos') {
@@ -260,6 +458,7 @@ const TablesAdmin = () => {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchData();
@@ -409,19 +608,29 @@ const TablesAdmin = () => {
                       <td className="px-6 py-4">{item.carrera}</td>
                       <td className="px-6 py-4 flex gap-2">
                         <button
-                          onClick={() => handleEdit(item)}
+                          onClick={() => {
+                            // Asegurarse de que el ID esté disponible
+                            const alumnoId = item.user?.id || item.id;
+                            console.log('ID del alumno a editar:', alumnoId);
+                            console.log('Datos completos del alumno:', item);
+                            handleEdit({
+                              ...item,
+                              id: alumnoId
+                            });
+                          }}
                           className="text-blue-600 hover:text-blue-900 p-2"
                           title="Editar alumno"
-                          aria-label="Editar alumno"
                         >
                           <Edit size={18} />
-                          <span className="sr-only">Editar</span>
                         </button>
                         <button
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => {
+                            const alumnoId = item.id || item.user?.id;
+                            console.log('ID del alumno a eliminar:', alumnoId);
+                            handleDelete(alumnoId);
+                          }}
                           className="text-red-600 hover:text-red-900 p-2"
                           title="Eliminar alumno"
-                          aria-label="Eliminar alumno"
                         >
                           <Trash2 size={18} />
                           <span className="sr-only">Eliminar</span>
