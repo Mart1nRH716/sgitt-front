@@ -1,22 +1,32 @@
 'use client';
+import React from 'react';
 import MainAdmin from '@/components/MainAdmin';
 import SideBarAdmin from '@/components/SideBarAdmin';
 import React from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 const AdminPage = () => {
+  const [isOpen, setIsOpen] = React.useState(true);
+  const [currentTab, setCurrentTab] = React.useState<string | null>(null);
 
-    const [isOpen, setIsOpen] = React.useState(true);
-    const toggleSideBar = () => {
-        setIsOpen(!isOpen);
-    };
+  const toggleSideBar = () => {
+    setIsOpen(!isOpen);
+  };
 
-    return (
+  const handleTabSelect = (tab: string) => {
+    setCurrentTab(tab);
+  };
+
+  return (
     <div className="flex h-screen">
-        <SideBarAdmin isOpen={isOpen} toggleSideBar={toggleSideBar} />
-        <div className={`flex-1 transition-all duration-300 ${isOpen ? "ml-52" : "ml-20"}`}>
-            <MainAdmin />
-        </div>
+      <SideBarAdmin 
+        isOpen={isOpen} 
+        toggleSideBar={toggleSideBar} 
+        onSelectTab={handleTabSelect}
+      />
+      <div className={`flex-1 transition-all duration-300 ${isOpen ? "ml-52" : "ml-20"}`}>
+        <MainAdmin />
+      </div>
     </div>
   );
 }
