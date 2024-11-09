@@ -5,16 +5,16 @@ import DashboardHome from "./DashboardHome";
 
 const MainAdmin = () => {
   const [showDashboard, setShowDashboard] = useState(true);
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [activeTab2, setActiveTab2] = useState<string | null>(null);
 
   const handleSelectTab = (tab: string) => {
-    setActiveTab(tab);
+    setActiveTab2(tab);
     setShowDashboard(false);
   };
 
   const handleReturnToDashboard = () => {
     setShowDashboard(true);
-    setActiveTab(null);
+    setActiveTab2(null);
   };
 
   return (
@@ -23,7 +23,7 @@ const MainAdmin = () => {
       {showDashboard ? (
         <DashboardHome onSelectTab={handleSelectTab} />
       ) : (
-        <TablesAdmin activeTab={activeTab || 'alumnos'} />
+        <TablesAdmin activeTab2={activeTab2 || 'alumnos'} />
       )}
     </div>
   );
