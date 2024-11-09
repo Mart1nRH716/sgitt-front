@@ -2,7 +2,6 @@
 import React from 'react';
 import MainAdmin from '@/components/MainAdmin';
 import SideBarAdmin from '@/components/SideBarAdmin';
-import React from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 const AdminPage = () => {
