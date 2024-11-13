@@ -7,6 +7,7 @@ import AuthService from '@/app/utils/authService';
 import { debounce } from 'lodash';
 
 
+
 interface UserType {
   id: number;
   email: string;
@@ -18,7 +19,7 @@ interface UserType {
 interface CreateChatDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConversationCreated: () => void;
+  onConversationCreated: (conversation: { id: number; name: string; is_group: boolean; participants: UserType[] }) => void;
 }
 
 const CreateChatDialog: React.FC<CreateChatDialogProps> = ({
@@ -112,7 +113,7 @@ const CreateChatDialog: React.FC<CreateChatDialogProps> = ({
   const handleCreateConversation = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      await axios.post(
+      const response = await axios.post(
         'http://localhost:8000/api/chat/conversations/create_or_get_conversation/',
         {
           participant_ids: selectedUsers.map(user => user.id),
@@ -123,7 +124,7 @@ const CreateChatDialog: React.FC<CreateChatDialogProps> = ({
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-      onConversationCreated();
+      onConversationCreated(response.data);
       onClose();
     } catch (error) {
       console.error('Error creating conversation:', error);

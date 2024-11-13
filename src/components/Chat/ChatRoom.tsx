@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useCallback } from 'react';
 
 interface Message {
   id: number;
@@ -27,6 +28,26 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const router = useRouter();
   const currentUserEmail = localStorage.getItem('userEmail');
+  const messageQueue = useRef<Message[]>([]);
+
+  // Función para procesar mensajes entrantes
+  const handleNewMessage = useCallback((newMessage: Message) => {
+    setMessages(prevMessages => {
+      // Verificar si el mensaje ya existe
+      const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
+      if (!messageExists) {
+        const updatedMessages = [...prevMessages, newMessage];
+        return updatedMessages;
+      }
+      return prevMessages;
+    });
+
+    // Marcar como leído si es necesario
+    if (newMessage.sender_email !== currentUserEmail && 
+        document.visibilityState === 'visible') {
+      markMessageAsRead(newMessage.id);
+    }
+  }, [currentUserEmail]);
 
   const markMessageAsRead = async (messageId: number) => {
     try {
@@ -55,7 +76,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (!conversation) return;
-      
+
       try {
         const token = localStorage.getItem('accessToken');
         const response = await axios.get(
@@ -94,21 +115,35 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
     
     websocket.onopen = () => {
       console.log('Connected to WebSocket');
-    };
-
-    websocket.onmessage = async (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'message') {
-        const newMessage = data.message;
-        setMessages(prev => [...prev, newMessage]);
-        
-        // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
-        if (newMessage.sender_email !== currentUserEmail && 
-            document.visibilityState === 'visible') {
-          await markMessageAsRead(newMessage.id);
+      while (messageQueue.current.length > 0) {
+        const message = messageQueue.current.shift();
+        if (message) {
+          handleNewMessage(message);
         }
       }
     };
+
+    websocket.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'message') {
+      const newMessage = data.message;
+      // Usar una función de actualización para evitar problemas de concurrencia
+      setMessages(prevMessages => {
+        // Verificar si el mensaje ya existe
+        const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
+        if (!messageExists) {
+          return [...prevMessages, newMessage];
+        }
+        return prevMessages;
+      });
+      
+      // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
+      if (newMessage.sender_email !== currentUserEmail && 
+          document.visibilityState === 'visible') {
+        await markMessageAsRead(newMessage.id);
+      }
+    }
+  };
 
     websocket.onclose = () => {
       console.log('Disconnected from WebSocket');

@@ -6,18 +6,29 @@ import ChatRoom from '@/components/Chat/ChatRoom';
 import CreateChatDialog from '@/components/Chat/CreateChatDialog';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import axios from 'axios';
 
 interface Conversation {
   id: number;
   name: string;
   participants: any[];
   is_group: boolean;
+  last_message: string;
+  unread_count: number;
 }
 
 const ChatPage = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [shouldRefreshList, setShouldRefreshList] = useState(false);
   const router = useRouter();
+
+  const handleConversationCreated = (newConversation: Conversation) => {
+    setIsCreateDialogOpen(false);
+    setSelectedConversation(newConversation);
+    setShouldRefreshList(true);
+  };
+
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -25,6 +36,30 @@ const ChatPage = () => {
       router.push('/login');
     }
   }, [router]);
+
+  useEffect(() => {
+    const handleAutoSelect = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const conversationId = searchParams.get('conversation');
+      
+      if (conversationId) {
+        try {
+          const token = localStorage.getItem('accessToken');
+          const response = await axios.get(
+            `http://localhost:8000/api/chat/conversations/${conversationId}/`,
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+          setSelectedConversation(response.data);
+        } catch (error) {
+          console.error('Error al cargar la conversación:', error);
+        }
+      }
+    };
+  
+    handleAutoSelect();
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
@@ -54,6 +89,7 @@ const ChatPage = () => {
             <ConversationList
               onSelectConversation={setSelectedConversation}
               selectedConversation={selectedConversation}
+              key={shouldRefreshList ? 'refresh' : 'normal'}
             />
           </div>
         </div>
@@ -77,8 +113,15 @@ const ChatPage = () => {
       <CreateChatDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
-        onConversationCreated={() => {
+        onConversationCreated={(conversation) => {
+          const fullConversation: Conversation = {
+            ...conversation,
+            last_message: '',
+            unread_count: 0
+          };
           setIsCreateDialogOpen(false);
+          setSelectedConversation(fullConversation);
+          setShouldRefreshList(true);
           // Aquí podrías actualizar la lista de conversaciones
         }}
       />

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { BiSearchAlt } from 'react-icons/bi';
 import { MdOutlineCancel } from "react-icons/md";
-import { buscarProfesores, buscarAlumnos } from '../app/utils/api';
+import { buscarProfesores, buscarAlumnos, createOrGetConversation } from '../app/utils/api';
 import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { GiSharkFin } from "react-icons/gi";
 import { AiOutlineInfoCircle } from 'react-icons/ai';
@@ -22,6 +22,7 @@ interface Profesor {
   materias: Materia[];
   areas_profesor: Array<{id: number, nombre: string}>;
   departamento: string;  
+  user_id: number;
 }
 
 interface Alumno {
@@ -32,6 +33,7 @@ interface Alumno {
   apellido_materno: string;
   carrera: string;
   areas_alumno: Array<{id: number, nombre: string}>;
+  user_id: number;
 }
 
 interface BuscadorProps {
@@ -46,6 +48,7 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loadingContact, setLoadingContact] = useState<number | null>(null);
 
   useEffect(() => {
     const storedUserType = localStorage.getItem('user-Type') as 'alumno' | 'profesor';
@@ -57,26 +60,53 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
+    
     try {
+      let resultadosBusqueda;
       if (userType === 'alumno') {
-        const profesores = await buscarProfesores(buscar);
-        setResultados(profesores);
+        resultadosBusqueda = await buscarProfesores(buscar);
+      } else if (userType === 'profesor') {
+        resultadosBusqueda = await buscarAlumnos(buscar);
       } else {
-        const alumnos = await buscarAlumnos(buscar);
-        setResultados(alumnos);
+        throw new Error('Tipo de usuario no válido');
       }
-    } catch (error) {
+      
+      setResultados(resultadosBusqueda);
+      
+    } catch (error: any) {
       console.error('Error en la búsqueda:', error);
-      setError('Ocurrió un error al realizar la búsqueda. Por favor, intenta de nuevo.');
+      
+      // Manejar diferentes tipos de errores
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else if (error.response?.data?.detail) {
+        setError(error.response.data.detail);
+      } else if (typeof error === 'string') {
+        setError(error);
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Error desconocido al realizar la búsqueda');
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+};
 
-  const handleContactar = (resultado: Profesor | Alumno) => {
-    console.log(`Contactando a ${resultado.nombre}`);
-  };
+  // En Buscador.tsx, modificar la función handleContactar:
 
+  const handleContactar = async (resultado: Profesor | Alumno) => {
+    setLoadingContact(resultado.user_id);
+    try {
+      const response = await createOrGetConversation(resultado.user_id);
+      window.location.href = `/chat?conversation=${response.id}`;
+    } catch (error) {
+      console.error('Error al crear la conversación:', error);
+      // Aquí podrías mostrar un mensaje de error
+    } finally {
+      setLoadingContact(null);
+    }
+  };
   const renderResultado = (resultado: Profesor | Alumno) => {
     const esProfesor = 'materias' in resultado;
     const Icon = esProfesor ? FaChalkboardTeacher : FaUserGraduate;
@@ -166,13 +196,22 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
 
           {/* Botón de contacto */}
           <button 
-            className='mt-auto w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary 
-                       transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2
-                       focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50'
-            onClick={() => handleContactar(resultado)}
-          >
-            Contactar
-          </button>
+              className='mt-auto w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary 
+                        transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50
+                        disabled:opacity-50 disabled:cursor-wait'
+              onClick={() => handleContactar(resultado)}
+              disabled={loadingContact === resultado.id}
+            >
+              {loadingContact === resultado.id ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span className="ml-2">Conectando...</span>
+                </>
+              ) : (
+                'Contactar'
+              )}
+            </button>
         </div>
       </div>
     );
