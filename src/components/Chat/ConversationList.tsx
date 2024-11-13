@@ -46,8 +46,26 @@ const ConversationList: React.FC<ConversationListProps> = ({
     }
   };
 
+  const updateConversations = async () => {
+    try {
+      const token = await AuthService.getValidToken();
+      if (!token) return;
+  
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chat/conversations/`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      setConversations(response.data);
+    } catch (error) {
+      console.error('Error updating conversations:', error);
+    }
+  };
+
   useEffect(() => {
     fetchConversations();
+    updateConversations();
 
     // Configurar WebSocket para notificaciones
     const wsUrl = `ws://localhost:8000/ws/notifications/`;
@@ -60,6 +78,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'unread_count_update') {
+        updateConversations();
         setConversations(prevConversations =>
           prevConversations.map(conv =>
             conv.id === data.conversation_id

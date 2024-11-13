@@ -5,6 +5,7 @@ import { GiSharkFin } from "react-icons/gi";
 import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { obtenerPropuestas, obtenerAreas  } from '../app/utils/api';
 import MultiSelect from './MultiSelect';
+import axios from 'axios';
 
 type PropuestaType = {
   id: number;
@@ -19,6 +20,7 @@ type PropuestaType = {
   tipo_propuesta: string;
   datos_contacto: { id: number; dato: string }[];
   autor: {
+    id: number;
     nombre: string;
     email: string;
     tipo: 'alumno' | 'profesor';
@@ -31,6 +33,13 @@ type PropuestaType = {
 interface Area {
   id: number;
   nombre: string;
+}
+
+interface ConversationResponse {
+  id: number;
+  name: string;
+  participants: any[];
+  is_group: boolean;
 }
 
 const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
@@ -184,6 +193,33 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
 
   const handleCloseDetails = () => {
     setSelected(null);
+  };
+
+  const handleContactar = async (autorId: number) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No se encontró el token de acceso');
+      }
+  
+      // Crear o obtener la conversación
+      const response = await axios.post<ConversationResponse>(
+        'http://localhost:8000/api/chat/conversations/create_or_get_conversation/',
+        {
+          participant_ids: [autorId],
+          is_group: false
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+  
+      // Redirigir al chat con la conversación creada
+      window.location.href = `/chat?conversation=${response.data.id}`;
+    } catch (error) {
+      console.error('Error al crear la conversación:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
   };
 
   return (
@@ -433,9 +469,12 @@ const PropuestaDiv = ({ searchTerm }: { searchTerm: string }) => {
                 </div>
               </div>
               <div className='mt-5 flex justify-end gap-4'>
-                <button className='bg-primary text-white px-4 py-2 rounded hover:bg-primary/80'>
-                  Contactar
-                </button>
+              <button 
+                className='bg-primary text-white px-4 py-2 rounded hover:bg-primary/80'
+                onClick={() => handleContactar(selected.autor.id)}
+              >
+                Contactar
+              </button>
                 
               </div>
             </div>

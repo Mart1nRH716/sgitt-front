@@ -52,6 +52,7 @@ interface Propuesta {
   tipo_propuesta: string;
   datos_contacto: { id: number; dato: string }[];
   autor: {
+    id: number;
     nombre: string;
     email: string;
     tipo: 'alumno' | 'profesor';
@@ -632,7 +633,7 @@ export const buscarAlumnos = async (query: string): Promise<any[]> => {
       throw new Error('No se encontró el token de acceso');
     }
    
-    const response = await axios.get(`${API_URL}/alumnos/buscar/`, {
+    const response = await axios.get(`${API_URL}/alumno/buscar/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -800,6 +801,45 @@ export const deleteAdminItem = async (type: 'alumnos' | 'profesores' | 'propuest
       console.log('URL que causó el error:', error.config?.url);
       console.log('Respuesta del servidor:', error.response?.data);
       throw new Error(`Error al eliminar: ${error.response?.status} - ${error.response?.statusText}`);
+    }
+    throw error;
+  }
+};
+
+
+// Añadir en api.ts
+
+interface ConversationResponse {
+  id: number;
+  name: string;
+  participants: any[];
+  is_group: boolean;
+}
+
+export const createOrGetConversation = async (participantId: number): Promise<ConversationResponse> => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+
+    const response = await axios.post<ConversationResponse>(
+      `${API_URL}/chat/conversations/create_or_get_conversation/`,
+      {
+        participant_ids: [participantId],
+        is_group: false
+      },
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw error.response?.data || error.message;
     }
     throw error;
   }
