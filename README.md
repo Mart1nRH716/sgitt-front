@@ -118,10 +118,11 @@ npm run start
 
 ## Contribuir
 
-1. Crear una rama para tu característica (`git checkout -b feature/AmazingFeature`)
-2. Realizar cambios y commits (`git commit -m 'Add some AmazingFeature'`)
-3. Push a la rama (`git push origin feature/AmazingFeature`)
-4. Abrir un Pull Request
+1. Fork del repositorio
+2. Crear una rama para tu característica (`git checkout -b feature/AmazingFeature`)
+3. Realizar cambios y commits (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir un Pull Request
 
 ## Licencia
 
