@@ -131,7 +131,7 @@ Este proyecto está bajo la Licencia MIT.
 ## Contacto
 
 - Nombre del Equipo - TT 2024 B163
-- Email del Proyecto - sgitt@gmail.com
+- Email del Proyecto - sgitt2002@gmail.com
 
 ## Agradecimientos
 
