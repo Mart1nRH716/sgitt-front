@@ -21,6 +21,8 @@ const Login: React.FC = () => {
   }
 
   
+// src/components/Login.tsx - modifica la función handleSubmit
+
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setIsLoading(true);
@@ -34,6 +36,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     localStorage.setItem('accessToken', response.access);
     localStorage.setItem('userEmail', response.user_email);
     localStorage.setItem('user-Type', response.user_type);
+    // Guardar el estado de admin
+    localStorage.setItem('isAdmin', response.is_admin ? 'true' : 'false');
     
     // Si es profesor y es su primer inicio, mostrar modal de cambio de contraseña
     if (response.user_type === 'profesor' && response.primer_inicio) {

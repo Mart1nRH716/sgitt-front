@@ -18,7 +18,7 @@ const HeaderAdmin: React.FC<HeaderAdminProps> = ({ onDashboardClick }) => {
           className="text-4xl border-2 border-help3 p-2 rounded-lg hover:bg-secondary duration-300 cursor-pointer" 
           onClick={onDashboardClick}
         />
-        <FiBell className="text-4xl border-2 border-help3 p-2 rounded-lg hover:bg-secondary duration-300 cursor-pointer" />
+        {/* <FiBell className="text-4xl border-2 border-help3 p-2 rounded-lg hover:bg-secondary duration-300 cursor-pointer" /> */}
       </div>
     </div>
   );

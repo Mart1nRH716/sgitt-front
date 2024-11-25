@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { register ,obtenerMaterias  } from '../app/utils/api';
+import { register, obtenerMaterias } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
 
 interface Area {
@@ -17,7 +17,7 @@ const Register: React.FC = () => {
     boleta: '',
     email: '',
     carrera: '',
-    plan_estudios: '',
+    plan_estudios: '2020',
     password: '',
     confirmPassword: '',
     areas_ids: [] as number[],
@@ -59,24 +59,24 @@ const Register: React.FC = () => {
     if (formData.password.length < 8) {
       clientErrors.password = "La contraseña debe tener al menos 8 caracteres";
     }
-    
+
     if (!formData.password.match(/[A-Z]/)) {
       clientErrors.password = "La contraseña debe contener al menos una letra mayúscula";
     }
-    
+
     if (!formData.password.match(/[0-9]/)) {
       clientErrors.password = "La contraseña debe contener al menos un número";
     }
-    
+
     if (Object.keys(clientErrors).length > 0) {
       setErrors(clientErrors);
       return;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       setPasswordError('Las contraseñas no coinciden');
       return;
-    } 
+    }
 
     const totalAreas = formData.areas_ids.length + formData.areas_custom.length;
     if (totalAreas < 3) {
@@ -102,7 +102,21 @@ const Register: React.FC = () => {
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({ ...prevData, [name]: value }));
+
+    setFormData(prevData => {
+      const newData = { ...prevData, [name]: value };
+
+      // Si se está cambiando la carrera, actualizar automáticamente el plan de estudios
+      if (name === 'carrera') {
+        // Si la carrera es ISC, mantener el plan de estudios actual
+        // Para LCD e IIA, forzar el plan 2020
+        if (value === 'LCD' || value === 'IIA') {
+          newData.plan_estudios = '2020';
+        }
+      }
+
+      return newData;
+    });
   }, []);
 
   const handleAreaChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -112,7 +126,7 @@ const Register: React.FC = () => {
       e.target.value = ''; // Reset select value
       return;
     }
-    
+
     const areaId = parseInt(value);
     if (!formData.areas_ids.includes(areaId)) {
       setFormData(prevData => ({
@@ -155,6 +169,7 @@ const Register: React.FC = () => {
     }
   }, [formData.password, formData.confirmPassword]);
 
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-gray-100 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
@@ -170,224 +185,252 @@ const Register: React.FC = () => {
             <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Registro</h2>
             <p className="text-center text-gray-600 mb-8">Crea una nueva cuenta</p>
             <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.nombre}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <label htmlFor="apellido_paterno" className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
-            <input
-              id="apellido_paterno"
-              name="apellido_paterno"
-              type="text"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.apellido_paterno}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <label htmlFor="apellido_materno" className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
-            <input
-              id="apellido_materno"
-              name="apellido_materno"
-              type="text"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.apellido_materno}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-              <label htmlFor="boleta" className="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
-              <input
-                id="boleta"
-                name="boleta"
-                type="text"
-                required
-                className={`w-full px-3 py-2 border ${errors.boleta ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-                value={formData.boleta}
-                onChange={handleChange}
-              />
-              {errors.boleta && (
-                <p className="text-red-500 text-sm mt-1">{errors.boleta}</p>
-              )}
-            </div>
-            <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-              value={formData.email}
-              onChange={handleChange}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-            )}
-          </div>
-          
-          {/* Nuevos campos de contraseña */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className={`w-full px-3 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-              value={formData.password}
-              onChange={handleChange}
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contraseña</label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
-          </div>
-          
-          {passwordError && (
-            <div className="text-red-500 text-sm">{passwordError}</div>
-          )}
-          
-          <div>
-            <label htmlFor="carrera" className="block text-sm font-medium text-gray-700 mb-1">Carrera</label>
-            <select
-              id="carrera"
-              name="carrera"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.carrera}
-              onChange={handleChange}
-            >
-              <option value="">Selecciona una carrera</option>
-              <option value="ISC">Sistemas Computacionales</option>
-              <option value="LCD">Licenciatura en Ciencia de Datos</option>
-              <option value="IIA">Inteligencia Artificial</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="plan_estudios" className="block text-sm font-medium text-gray-700 mb-1">Plan de estudios</label>
-            <select
-              id="plan_estudios"
-              name="plan_estudios"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.plan_estudios}
-              onChange={handleChange}
-            >
-              <option value="">Selecciona un plan</option>
-              <option value="2009">2009</option>
-              <option value="2020">2020</option>
-            </select>
-          </div>
-          <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Áreas de conocimiento (mínimo 3)
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
-                onChange={handleAreaChange}
-                value=""
-              >
-                <option value="">Selecciona un área</option>
-                <option value="other">Otra área...</option>
-                {areas.map(area => (
-                  <option key={area.id} value={area.id}>{area.nombre}</option>
-                ))}
-              </select>
+              <div>
+                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="apellido_paterno" className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
+                <input
+                  id="apellido_paterno"
+                  name="apellido_paterno"
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.apellido_paterno}
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="apellido_materno" className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
+                <input
+                  id="apellido_materno"
+                  name="apellido_materno"
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.apellido_materno}
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="boleta" className="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
+                <input
+                  id="boleta"
+                  name="boleta"
+                  type="text"
+                  required
+                  className={`w-full px-3 py-2 border ${errors.boleta ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                  value={formData.boleta}
+                  onChange={handleChange}
+                />
+                {errors.boleta && (
+                  <p className="text-red-500 text-sm mt-1">{errors.boleta}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                )}
+              </div>
 
-              {/* Popup para área personalizada */}
-              {showCustomAreaPopup && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                    <h3 className="text-lg font-semibold mb-4">Agregar área personalizada</h3>
-                    <input
-                      type="text"
-                      value={customArea}
-                      onChange={(e) => setCustomArea(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
-                      placeholder="Ingresa el nombre del área"
-                    />
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowCustomAreaPopup(false);
-                          setCustomArea('');
-                        }}
-                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAddCustomArea}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                      >
-                        Agregar
-                      </button>
+              {/* Nuevos campos de contraseña */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className={`w-full px-3 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                {errors.password && (
+                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contraseña</label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {passwordError && (
+                <div className="text-red-500 text-sm">{passwordError}</div>
+              )}
+
+              <div>
+                <label htmlFor="carrera" className="block text-sm font-medium text-gray-700 mb-1">
+                  Carrera
+                </label>
+                <select
+                  id="carrera"
+                  name="carrera"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.carrera}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecciona una carrera</option>
+                  <option value="ISC">Sistemas Computacionales</option>
+                  <option value="LCD">Licenciatura en Ciencia de Datos</option>
+                  <option value="IIA">Inteligencia Artificial</option>
+                </select>
+
+                {/* Plan de estudios condicionado por la carrera */}
+                <div>
+                  <label htmlFor="plan_estudios" className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+                    Plan de estudios
+                  </label>
+                  {formData.carrera === 'ISC' ? (
+                    <select
+                      id="plan_estudios"
+                      name="plan_estudios"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.plan_estudios}
+                      onChange={handleChange}
+                    >
+                      <option value="">Selecciona un plan</option>
+                      <option value="2009">2009</option>
+                      <option value="2020">2020</option>
+                    </select>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value="2020"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
+                        disabled
+                      />
+                      <input
+                        type="hidden"
+                        name="plan_estudios"
+                        value="2020"
+                      />
+                      {(formData.carrera === 'LCD' || formData.carrera === 'IIA') && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Para {formData.carrera === 'LCD' ? 'Licenciatura en Ciencia de Datos ' : 'Inteligencia Artificial '}
+                          solo está disponible el plan 2020
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Áreas de conocimiento (mínimo 3)
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
+                  onChange={handleAreaChange}
+                  value=""
+                >
+                  <option value="">Selecciona un área</option>
+                  <option value="other">Otra área...</option>
+                  {areas.map(area => (
+                    <option key={area.id} value={area.id}>{area.nombre}</option>
+                  ))}
+                </select>
+
+                {/* Popup para área personalizada */}
+                {showCustomAreaPopup && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                      <h3 className="text-lg font-semibold mb-4">Agregar área personalizada</h3>
+                      <input
+                        type="text"
+                        value={customArea}
+                        onChange={(e) => setCustomArea(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+                        placeholder="Ingresa el nombre del área"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCustomAreaPopup(false);
+                            setCustomArea('');
+                          }}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddCustomArea}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                        >
+                          Agregar
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Mostrar áreas seleccionadas */}
-              <div className="space-y-2">
-                {formData.areas_ids.map(areaId => {
-                  const area = areas.find(a => a.id === areaId);
-                  return area ? (
-                    <div key={area.id} className="flex items-center justify-between bg-blue-50 p-2 rounded">
-                      <span>{area.nombre}</span>
+                {/* Mostrar áreas seleccionadas */}
+                <div className="space-y-2">
+                  {formData.areas_ids.map(areaId => {
+                    const area = areas.find(a => a.id === areaId);
+                    return area ? (
+                      <div key={area.id} className="flex items-center justify-between bg-blue-50 p-2 rounded">
+                        <span>{area.nombre}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeArea(area.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : null;
+                  })}
+                  {formData.areas_custom.map(area => (
+                    <div key={area} className="flex items-center justify-between bg-blue-50 p-2 rounded">
+                      <span>{area}</span>
                       <button
                         type="button"
-                        onClick={() => removeArea(area.id)}
+                        onClick={() => removeCustomArea(area)}
                         className="text-red-500 hover:text-red-700"
                       >
                         ×
                       </button>
                     </div>
-                  ) : null;
-                })}
-                {formData.areas_custom.map(area => (
-                  <div key={area} className="flex items-center justify-between bg-blue-50 p-2 rounded">
-                    <span>{area}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeCustomArea(area)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {areaError && (
-                <p className="text-red-500 text-sm mt-1">{areaError}</p>
-              )}
-            </div>
-          {error && (
+                {areaError && (
+                  <p className="text-red-500 text-sm mt-1">{areaError}</p>
+                )}
+              </div>
+              {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                   <span className="block sm:inline">{error}</span>
                 </div>

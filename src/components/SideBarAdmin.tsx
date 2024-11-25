@@ -58,7 +58,7 @@ const SideBarAdmin: React.FC<SideBarAdminProps> = ({ toggleSideBar, isOpen, onSe
         {/* Logo */}
         <div className="flex items-center justify-between mb-10">
           <h1 className={`text-2xl cursor-pointer text-oscure font-bold ${!isOpen && "hidden"}`}>
-            SGI<span className='text-secondary'>TT</span>
+            <a href="/home">SGI<span className='text-secondary'>TT</span></a>
           </h1>
           <button onClick={toggleSideBar} className="text-2xl">
             {isOpen ? "×" : "☰"}
