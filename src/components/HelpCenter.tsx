@@ -10,9 +10,35 @@ import {
   Phone,
   MessageSquare
 } from 'lucide-react';
+import { submitProblemReport } from '@/app/utils/api';
+import Swal from 'sweetalert2';
 
 export default function HelpCenter() {
   const [selectedSection, setSelectedSection] = useState('guide');
+  const [report, setReport] = useState({
+    type: 'Error Tecnico',
+    description: '',
+    email: ''
+  });
+  
+  const handleSubmitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await submitProblemReport(report);
+      Swal.fire({
+        icon: 'success',
+        title: '¡Reporte enviado!',
+        text: 'Nos pondremos en contacto contigo pronto'
+      });
+      setReport({ type: 'Error Tecnico', description: '', email: '' });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo enviar el reporte. Por favor intenta más tarde.'
+      });
+    }
+  };
 
   const sections = {
     guide: {
@@ -129,14 +155,18 @@ export default function HelpCenter() {
       title: 'Reportar Problema',
       content: (
         <div className="space-y-6">
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmitReport}>
             <div>
               <label className="block text-sm font-medium mb-1">Tipo de Problema</label>
-              <select className="w-full p-2 border rounded-lg">
-                <option>Error técnico</option>
-                <option>Problema de acceso</option>
-                <option>Contenido inapropiado</option>
-                <option>Otro</option>
+              <select 
+                className="w-full p-2 border rounded-lg"
+                value={report.type}
+                onChange={(e) => setReport({...report, type: e.target.value})}
+              >
+                <option value="Error Tecnico">Error técnico</option>
+                <option value="Acceso">Problema de acceso</option>
+                <option value="Contenido inapropiado">Contenido inapropiado</option>
+                <option value="Otro">Otro</option>
               </select>
             </div>
             <div>
@@ -144,6 +174,9 @@ export default function HelpCenter() {
               <textarea 
                 className="w-full p-2 border rounded-lg h-32" 
                 placeholder="Describe el problema en detalle..."
+                value={report.description}
+                onChange={(e) => setReport({...report, description: e.target.value})}
+                required
               />
             </div>
             <div>
@@ -152,15 +185,18 @@ export default function HelpCenter() {
                 type="email" 
                 className="w-full p-2 border rounded-lg"
                 placeholder="tu@email.com"
+                value={report.email}
+                onChange={(e) => setReport({...report, email: e.target.value})}
+                required
               />
             </div>
-            <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Enviar Reporte
             </button>
           </form>
-          <div className="text-sm text-gray-500 text-center">
-            Nos pondremos en contacto contigo lo antes posible
-          </div>
         </div>
       )
     }

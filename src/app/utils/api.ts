@@ -875,3 +875,31 @@ export const getMetricsByDate = async (startDate: string, endDate: string) => {
     throw error;
   }
 };
+
+interface ReportProblem {
+  type: string;
+  description: string;
+  email: string;
+}
+
+export const submitProblemReport = async (report: ReportProblem) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.post(
+      `${API_URL}/reports/problem/`,
+      report,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Error al enviar reporte');
+    }
+    throw error;
+  }
+};
