@@ -121,6 +121,7 @@ interface ApiResponse {
   user_type: string;
   user_email: string;
   primer_inicio: boolean;
+  is_admin: boolean;
 }
 
 
@@ -841,6 +842,36 @@ export const createOrGetConversation = async (participantId: number): Promise<Co
     if (axios.isAxiosError(error)) {
       throw error.response?.data || error.message;
     }
+    throw error;
+  }
+};
+
+export const getAdminMetrics = async () => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${API_URL}/crud/metrics/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    throw error;
+  }
+};
+
+// Obtener datos para las métricas específicas
+export const getMetricsByDate = async (startDate: string, endDate: string) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(
+      `${API_URL}/crud/metrics/by-date/?start=${startDate}&end=${endDate}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching metrics by date:', error);
     throw error;
   }
 };

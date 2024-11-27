@@ -1,19 +1,16 @@
-'use client';
-import React,  { useEffect, useState } from 'react';
+// src/components/SideBar.tsx
+
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FaHome, FaUser } from "react-icons/fa";
 import { IoMdPaper } from "react-icons/io";
-import { FaBookmark } from "react-icons/fa";
-import { GoGear } from "react-icons/go";
-import { AiOutlineHome, AiOutlineUser,AiOutlineQuestionCircle } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineQuestionCircle } from "react-icons/ai";
 import { BiLogOut } from "react-icons/bi";
+import { MdAdminPanelSettings } from "react-icons/md";
 import Image from 'next/image';
 import alumnoIcono from '../utils/alumno_icono.png';
 import profesorIcono from '../utils/profesor_icono.png';
-import { logout } from '../app/utils/authUtils';
-
-
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -23,11 +20,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const pathname = usePathname();
   const [userType, setUserType] = useState('Usuario');
   const [userEmail, setUserEmail] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setUserType(localStorage.getItem('user-Type') || 'Usuario');
-      setUserEmail(localStorage.getItem('userEmail') || '');
+      // Obtener datos del localStorage
+      const storedUserType = localStorage.getItem('user-Type');
+      const storedEmail = localStorage.getItem('userEmail');
+      const storedIsAdmin = localStorage.getItem('isAdmin') === 'true';
+
+      setUserType(storedUserType || 'Usuario');
+      setUserEmail(storedEmail || '');
+      setIsAdmin(storedIsAdmin);
     }
   }, []);
 
@@ -35,17 +39,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     if (path === '/home') {
       return pathname === '/home' ? 'active' : '';
     }
-    if (path === '/perfil') {
-      return pathname === '/perfil' ? 'active' : '';
-    }
     return pathname.startsWith(path) ? 'active' : '';
   };
 
   return (
-    <div className={`fixed top-[64px] transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40`} id='sidebar'>
+    <div className={`fixed top-[64px] transition-all overflow-hidden left-0 ${isCollapsed ? 'w-16' : 'w-64'} bg-white border-secondary border-r bottom-0 z-40 md:block ${isCollapsed ? 'hidden' : 'block'}`} id='sidebar'>
       <Link href="/perfil" className='p-4 flex items-center gap-4 hover:bg-help3'>
-      
-
         <Image
           src={userType === 'alumno' ? alumnoIcono : profesorIcono}
           className='w-16 aspect-square object-cover rounded'
@@ -79,35 +78,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               <IoMdPaper className='sidebar-menu-icon' /> {!isCollapsed && 'Mis Propuestas'}
             </Link>
           </li>
-          {/*
-           
-          <li>
-            <Link href="/perfil/guardados" className={isActive('/perfil/guardados')}>
-              <FaBookmark className='sidebar-menu-icon' /> {!isCollapsed && 'Guardados'}
-            </Link>
-          </li>
-          <li>
-            <Link href="/perfil/configuracion" className={isActive('/perfil/configuracion')}>
-              <GoGear className='sidebar-menu-icon' /> {!isCollapsed && 'Configuración'}
-            </Link>
-          </li>
 
-           */}
+          {isAdmin && (
+            <li>
+              <Link href="/admin" className={isActive('/admin')}>
+                <MdAdminPanelSettings className='sidebar-menu-icon' /> 
+                {!isCollapsed && 'Panel Admin'}
+              </Link>
+            </li>
+          )}
+
           <li>
             <Link href="/ayuda" className={isActive('/ayuda')}>
               <AiOutlineQuestionCircle className='sidebar-menu-icon' /> {!isCollapsed && 'Ayuda'}
             </Link>
           </li>
           <li>
-            <button 
-              onClick={logout}
-              className="flex items-center gap-4 py-2 px-3 hover:bg-help3 font-medium text-lg border-l-4 border-transparent whitespace-nowrap w-full"
-            >
-              <BiLogOut className='sidebar-menu-icon' /> 
-              {!isCollapsed && 'Cerrar Sesión'}
-            </button>
+            <Link href="/login" className={isActive('/login')} onClick={() => {
+              localStorage.clear();
+            }}>
+              <BiLogOut className='sidebar-menu-icon' /> {!isCollapsed && 'Cerrar Sesión'}
+            </Link>
           </li>
-
         </ul>
       </div>
     </div>
