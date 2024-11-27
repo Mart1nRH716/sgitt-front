@@ -1,54 +1,96 @@
-'use client'
-import React from 'react';
-import { useRouter } from 'next/navigation'
-import { BiSearchAlt } from 'react-icons/bi'
-import { FiClock } from "react-icons/fi";
-import { FaComputer } from "react-icons/fa6";
+'use client';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { BookOpen, UserPlus, LogIn, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import HelpModal from './HelpModal';
 
-const Landing: React.FC = () => {
+const Landing = () => {
   const router = useRouter();
-
-  const handleLogin = (): void => {
-    router.push('/login');
-  };
-
-  const handleRegister = (): void => {
-    router.push('/registro');
-  };
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-white to-gray-100">
-      <main className="flex-grow flex items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-4xl">
-          <div className='propDiv flex justify-center items-center'>
-            <div className='group propUnica w-full sm:w-4/5 md:w-3/4 lg:w-2/3 p-8 sm:p-10 bg-white rounded-2xl hover:bg-secondary transition-all duration-300 shadow-xl hover:shadow-2xl'>
-              <div className='space-y-6'>
-                <h1 className='text-3xl sm:text-4xl font-bold text-black group-hover:text-white transition-colors'>Bienvenido a SGITT</h1>
-                <h2 className='text-xl sm:text-2xl font-semibold text-gray-700 group-hover:text-gray-200 transition-colors'>Sistema de Gestión Integral de Trabajos Terminales</h2>
-                <p className='text-lg text-gray-600 pt-5 border-t-2 mt-5 group-hover:text-white transition-colors'>
-                  Inicia sesión o regístrate para comenzar
-                </p>
-                <div className='space-y-4 mt-8'>
-                  <button 
-                    className='border-2 rounded-xl block p-4 w-full text-lg font-semibold bg-transparent hover:bg-white text-black group-hover:text-white hover:text-black transition-colors'
-                    onClick={handleLogin}
-                  >
-                    Iniciar Sesión
-                  </button>
-                  <button 
-                    className='border-2 rounded-xl block p-4 w-full text-lg font-semibold bg-transparent hover:bg-white text-black group-hover:text-white hover:text-black transition-colors'
-                    onClick={handleRegister}
-                  >
-                    Registrarse
-                  </button>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/30 to-primary/10 flex items-center justify-center p-4">
+      <motion.div
+        className="w-full max-w-md space-y-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          className="text-center space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex items-center justify-center gap-3">
+            <motion.div
+              className="flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+            >
+              <BookOpen className="w-12 h-12 text-primary" />
+              <h1 className="text-4xl font-bold text-gray-800">
+                SGI<span className="text-primary">TT</span>
+              </h1>
+            </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsHelpModalOpen(true)}
+              className="p-2 hover:bg-white/50 rounded-full transition-colors"
+              title="Ayuda"
+            >
+              <HelpCircle className="w-8 h-8 text-primary" />
+            </motion.button>
           </div>
-        </div>
-      </main>
+          <p className="text-xl text-gray-600">
+            Sistema de Gestión Integral Web para Trabajos Terminales
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <motion.button
+            onClick={() => router.push('/login')}
+            className="w-full flex items-center justify-center gap-3 p-4 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <LogIn className="w-5 h-5" />
+            Iniciar Sesión
+          </motion.button>
+
+          <motion.button
+            onClick={() => router.push('/registro')}
+            className="w-full flex items-center justify-center gap-3 p-4 bg-white text-primary border-2 border-primary rounded-xl font-semibold hover:bg-primary/10 transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <UserPlus className="w-5 h-5" />
+            Registrarse
+          </motion.button>
+        </motion.div>
+
+        <motion.div
+          className="text-center text-sm text-gray-600"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          <p>© 2024 SGITT. Todos los derechos reservados.</p>
+        </motion.div>
+      </motion.div>
+
+      <HelpModal 
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+      />
     </div>
-  )
-}
+  );
+};
 
 export default Landing;

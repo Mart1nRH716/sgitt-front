@@ -1,157 +1,151 @@
-"use client";
+'use client';
+import { useState } from 'react';
+import { login } from '../app/utils/api';
+import { Mail, Lock, LogIn, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import HelpModal from './HelpModal';
+import ForgotPasswordModal from './ForgotPasswordModal';
+import { 
+  AuthLayout, 
+  AuthCard, 
+  AuthInput, 
+  AuthButton, 
+  BackButton,
+  Logo 
+} from './AuthComponents';
+import { motion } from 'framer-motion';
 
-import React, { useState } from 'react'
-import { login } from '../app/utils/api'
-import { UserIcon, KeyIcon, ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-import CambioContrasenaModal from './CambioContrasenaModal'
-import AgregarAreasModal from './AgregarAreasModal'
-import ForgotPasswordModal from './ForgotPasswordModal'
-
-const Login: React.FC = () => {
-  const [credentials, setCredentials] = useState({ email: '', password: '' })
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showAreasModal, setShowAreasModal] = useState(false);
+const Login = () => {
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials({ ...credentials, [e.target.name]: e.target.value })
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
-  
-// src/components/Login.tsx - modifica la función handleSubmit
-
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError('');
-
-  try {
-    const response = await login(credentials);
-    
-    // Guardar tokens y datos de usuario
-    localStorage.setItem('refreshToken', response.refresh);
-    localStorage.setItem('accessToken', response.access);
-    localStorage.setItem('userEmail', response.user_email);
-    localStorage.setItem('user-Type', response.user_type);
-    // Guardar el estado de admin
-    localStorage.setItem('isAdmin', response.is_admin ? 'true' : 'false');
-    
-    // Si es profesor y es su primer inicio, mostrar modal de cambio de contraseña
-    if (response.user_type === 'profesor' && response.primer_inicio) {
-      setShowPasswordModal(true);
-    } else {
-      // Redirigir a dashboard
-      window.location.href = '/home';
+    try {
+      const response = await login(credentials);
+      localStorage.setItem('accessToken', response.access);
+      localStorage.setItem('refreshToken', response.refresh);
+      localStorage.setItem('userEmail', response.user_email);
+      localStorage.setItem('user-Type', response.user_type);
+      
+      if (response.user_type === 'profesor' && response.primer_inicio) {
+        window.location.href = '/cambiar-password';
+      } else {
+        window.location.href = '/home';
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Error al iniciar sesión');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error(error);
-    if (error instanceof Error) {
-      setError(error.message);
-    } else {
-      setError('Ocurrió un error al iniciar sesión. Por favor, intente de nuevo.');
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <main className="flex-grow flex items-center justify-center px-4">
-        <div className="max-w-4xl w-full space-y-8">
-          <div className='buscadorDiv grid gap-10 bg-secondary rounded-lg p-[3rem]'>
-            <Link href="/" className="flex items-center text-oscure hover:text-primary transition-colors">
-              <ArrowLeft size={20} className="mr-2" />
-              Volver al inicio
-            </Link>
-            <h1 className='text-3xl font-bold text-center text-oscure'>Bienvenido</h1>
-            <p className='text-center text-gray-600'>Ingresa tus credenciales para iniciar sesión</p>
-            <form onSubmit={handleSubmit}>
-              <div className='primerDiv flex flex-col justify-between items-center rounded-xl gap-4 p-5 shadow-sm shadow-oscure bg-white'>
-                <div className='flex gap-2 items-center w-full relative'>
-                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    name="email"
-                    value={credentials.email}
-                    onChange={handleChange}
-                    className='bg-transparent text-oscure focus:outline-none w-full pl-10'
-                    placeholder='Ingresa tu correo'
-                    required
-                  />
-                </div>
-                <div className='flex gap-2 items-center w-full relative'>
-                  <KeyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="password"
-                    name="password"
-                    value={credentials.password}
-                    onChange={handleChange}
-                    className='bg-transparent text-oscure focus:outline-none w-full pl-10'
-                    placeholder='Ingresa tu contraseña'
-                    required
-                  />
-                </div>
-                {error && (
-                  <div className="w-full p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                    {error}
-                  </div>
-                )}
-                
-                <button 
-                  type="submit"
-                  className='bg-oscure w-full p-3 rounded-xl text-white cursor-pointer hover:bg-primary'
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-                </button>
+    <AuthLayout>
+      <BackButton />
+      
+      <AuthCard>
+        <motion.div 
+          className="p-8 space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+         <div className="flex justify-between items-center">
+            <Logo />
+            <button
+              onClick={() => setIsHelpModalOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Ayuda"
+            >
+              <HelpCircle className="w-6 h-6 text-gray-500 hover:text-primary" />
+            </button>
+          </div>
+          
+          <motion.div 
+            className="text-center space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h2 className="text-2xl font-bold text-gray-800">¡Bienvenido de nuevo!</h2>
+            <p className="text-gray-600">Inicia sesión para continuar</p>
+          </motion.div>
 
-                <button 
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <AuthInput
+              icon={Mail}
+              type="email"
+              placeholder="Correo electrónico"
+              value={credentials.email}
+              onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+              required
+            />
+
+            <AuthInput
+              icon={Lock}
+              type="password"
+              placeholder="Contraseña"
+              value={credentials.password}
+              onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+              required
+            />
+
+            {error && (
+              <motion.div 
+                className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                {error}
+              </motion.div>
+            )}
+
+            <AuthButton type="submit" isLoading={isLoading}>
+              {!isLoading && <LogIn className="w-5 h-5" />}
+              Iniciar Sesión
+            </AuthButton>
+          </form>
+
+          <div className="text-center space-y-2">
+          <button 
                   type="button"
                   onClick={() => setShowForgotPasswordModal(true)}
-                  className="text-blue-600 hover:text-blue-800 text-sm mt-2"
+                  className="text-primary hover:underline font-medium"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
-              </div>
-            </form>
-            {showPasswordModal && (
-              <CambioContrasenaModal
-                onPasswordChanged={() => {
-                  setShowPasswordModal(false);
-                  setShowAreasModal(true);
-                }}
-              />
-            )}
-
-            {showAreasModal && (
-              <AgregarAreasModal
-                onSkip={() => {
-                  setShowAreasModal(false);
-                  window.location.href = '/home';
-                }}
-                onComplete={() => {
-                  setShowAreasModal(false);
-                  window.location.href = '/home';
-                }}
-              />
-            )}
-
-            {/* Añadir el modal al final del componente */}
-            {showForgotPasswordModal && (
+            
+            <p className="text-sm text-gray-600">
+              ¿No tienes una cuenta?{' '}
+              <Link 
+                href="/registro" 
+                className="text-primary hover:underline font-medium"
+              >
+                Regístrate aquí
+              </Link>
+            </p>
+          </div>
+        </motion.div>
+      </AuthCard>
+      <HelpModal 
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+      />
+      {showForgotPasswordModal && (
               <ForgotPasswordModal
                 isOpen={showForgotPasswordModal}
                 onClose={() => setShowForgotPasswordModal(false)}
               />
             )}
-          </div>
-        </div>
-      </main>
-    </div>
-  )
-}
+    </AuthLayout>
+  );
+};
 
-export default Login
+export default Login;

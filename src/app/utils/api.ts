@@ -13,6 +13,7 @@ interface UserData {
   carrera: string;
   plan_estudios: string;
   password: string;
+  confirmPassword: string;
   areas_ids: number[];
   areas_custom: string[];
 }
@@ -67,23 +68,39 @@ interface Area {
   id: number;
   nombre: string;
 }
-
-
-
-
-
-
-
+// En src/app/utils/api.ts
 
 export const register = async (userData: UserData): Promise<ApiResponse> => {
   try {
+    // Reestructurar los datos antes de enviarlos
     const dataToSend = {
-      ...userData,
+      email: userData.email,
+      password: userData.password,
+      confirmPassword: userData.confirmPassword,
+      nombre: userData.nombre,
+      apellido_paterno: userData.apellido_paterno,
+      apellido_materno: userData.apellido_materno,
+      boleta: userData.boleta,
+      carrera: userData.carrera,
+      plan_estudios: userData.plan_estudios,
+      areas_ids: userData.areas_ids || [],
       areas_custom: userData.areas_custom || [],
+      user: {
+        email: userData.email,
+        first_name: userData.nombre,
+        last_name: userData.apellido_paterno
+      }
     };
 
-
-    const response = await axios.post<ApiResponse>(`${API_URL}/register/`, dataToSend);
+    const response = await axios.post<ApiResponse>(
+      `${API_URL}/register/`, 
+      dataToSend,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

@@ -1,15 +1,35 @@
-"use client";
-
-import React, { useState, useEffect, useCallback } from 'react';
+'use client';
+import { useState, useEffect, useCallback } from 'react';
 import { register, obtenerMaterias } from '../app/utils/api';
 import { useRouter } from 'next/navigation';
+import {
+  AuthLayout,
+  AuthCard,
+  AuthInput,
+  AuthButton,
+  BackButton,
+  Logo
+} from './AuthComponents';
+import { motion } from 'framer-motion';
+import {
+  Mail,
+  Lock,
+  User,
+  UserPlus,
+  BookOpen,
+  GraduationCap,
+  FileText,
+  Hash,
+  PlusCircle,
+  X
+} from 'lucide-react';
 
 interface Area {
   id: number;
   nombre: string;
 }
 
-const Register: React.FC = () => {
+const Registro = () => {
   const [formData, setFormData] = useState({
     nombre: '',
     apellido_paterno: '',
@@ -17,26 +37,20 @@ const Register: React.FC = () => {
     boleta: '',
     email: '',
     carrera: '',
-    plan_estudios: '2020',
+    plan_estudios: '',
     password: '',
     confirmPassword: '',
     areas_ids: [] as number[],
     areas_custom: [] as string[]
   });
+
+  const [currentStep, setCurrentStep] = useState(1);
   const [areas, setAreas] = useState<Area[]>([]);
   const [customArea, setCustomArea] = useState('');
   const [error, setError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [areaError, setAreaError] = useState('');
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showCustomAreaPopup, setShowCustomAreaPopup] = useState(false);
   const router = useRouter();
-  const [errors, setErrors] = useState<{
-    email?: string;
-    boleta?: string;
-    password?: string;
-    general?: string;
-  }>({});
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -50,66 +64,46 @@ const Register: React.FC = () => {
     fetchAreas();
   }, []);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+      return;
+    }
+
+    setIsLoading(true);
     setError('');
-    setErrors({});
-
-    const clientErrors: typeof errors = {};
-    if (formData.password.length < 8) {
-      clientErrors.password = "La contraseña debe tener al menos 8 caracteres";
-    }
-
-    if (!formData.password.match(/[A-Z]/)) {
-      clientErrors.password = "La contraseña debe contener al menos una letra mayúscula";
-    }
-
-    if (!formData.password.match(/[0-9]/)) {
-      clientErrors.password = "La contraseña debe contener al menos un número";
-    }
-
-    if (Object.keys(clientErrors).length > 0) {
-      setErrors(clientErrors);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setPasswordError('Las contraseñas no coinciden');
-      return;
-    }
-
-    const totalAreas = formData.areas_ids.length + formData.areas_custom.length;
-    if (totalAreas < 3) {
-      setAreaError('Debes seleccionar o agregar al menos 3 áreas de conocimiento');
-      return;
-    }
 
     try {
-      const response = await register(formData);
-      setRegistrationSuccess(true);
+      await register(formData);
+      // Mostrar mensaje de éxito y redireccionar
       setTimeout(() => {
-        router.push('/');
+        router.push('/login'); 
       }, 5000);
-    } catch (error: any) {
-      console.error('Error de registro:', error);
-      if (error.errors) {
-        setErrors(error.errors);
-      } else {
-        setError('Error al registrar. Por favor, intente nuevamente.');
-      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Error en el registro');
+    } finally {
+      setIsLoading(false);
     }
-  }, [formData, router]);
+  };
+
+  const handleAddCustomArea = () => {
+    if (customArea.trim() && !formData.areas_custom.includes(customArea.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        areas_custom: [...prev.areas_custom, customArea.trim()]
+      }));
+      setCustomArea('');
+      setShowCustomAreaPopup(false);
+    }
+  };
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     setFormData(prevData => {
       const newData = { ...prevData, [name]: value };
-
-      // Si se está cambiando la carrera, actualizar automáticamente el plan de estudios
       if (name === 'carrera') {
-        // Si la carrera es ISC, mantener el plan de estudios actual
-        // Para LCD e IIA, forzar el plan 2020
         if (value === 'LCD' || value === 'IIA') {
           newData.plan_estudios = '2020';
         }
@@ -119,334 +113,320 @@ const Register: React.FC = () => {
     });
   }, []);
 
-  const handleAreaChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === 'other') {
-      setShowCustomAreaPopup(true);
-      e.target.value = ''; // Reset select value
-      return;
-    }
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <AuthInput
+              icon={User}
+              placeholder="Nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              required
+            />
+            <AuthInput
+              icon={User}
+              placeholder="Apellido Paterno"
+              name="apellido_paterno"
+              value={formData.apellido_paterno}
+              onChange={(e) => setFormData({ ...formData, apellido_paterno: e.target.value })}
+              required
+            />
+            <AuthInput
+              icon={User}
+              placeholder="Apellido Materno"
+              name="apellido_materno"
+              value={formData.apellido_materno}
+              onChange={(e) => setFormData({ ...formData, apellido_materno: e.target.value })}
+              required
+            />
+            <AuthInput
+              icon={Hash}
+              placeholder="Boleta"
+              name="boleta"
+              value={formData.boleta}
+              onChange={(e) => setFormData({ ...formData, boleta: e.target.value })}
+              required
+            />
+          </motion.div>
+        );
 
-    const areaId = parseInt(value);
-    if (!formData.areas_ids.includes(areaId)) {
-      setFormData(prevData => ({
-        ...prevData,
-        areas_ids: [...prevData.areas_ids, areaId]
-      }));
-    }
-  }, [formData.areas_ids]);
+      case 2:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <AuthInput
+              icon={Mail}
+              type="email"
+              placeholder="Correo electrónico"
+              name="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <AuthInput
+              icon={Lock}
+              type="password"
+              placeholder="Contraseña"
+              name="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+            />
+            <AuthInput
+              icon={Lock}
+              type="password"
+              placeholder="Confirmar contraseña"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              required
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <select
+                className="w-full px-3 py-2 border rounded-lg"
+                name="carrera"
+                value={formData.carrera}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecciona carrera</option>
+                <option value="ISC">Sistemas Computacionales</option>
+                <option value="LCD">Ciencia de Datos</option>
+                <option value="IIA">Inteligencia Artificial</option>
+              </select>
 
-  const handleAddCustomArea = () => {
-    if (customArea.trim() && !formData.areas_custom.includes(customArea.trim())) {
-      setFormData(prevData => ({
-        ...prevData,
-        areas_custom: [...prevData.areas_custom, customArea.trim()]
-      }));
-      setCustomArea('');
-      setShowCustomAreaPopup(false);
-    }
-  };
-
-  const removeArea = (id: number) => {
-    setFormData(prevData => ({
-      ...prevData,
-      areas_ids: prevData.areas_ids.filter(areaId => areaId !== id)
-    }));
-  };
-
-  const removeCustomArea = (area: string) => {
-    setFormData(prevData => ({
-      ...prevData,
-      areas_custom: prevData.areas_custom.filter(customArea => customArea !== area)
-    }));
-  };
-
-  useEffect(() => {
-    if (formData.password === formData.confirmPassword) {
-      setPasswordError('');
-    } else if (formData.confirmPassword !== '') {
-      setPasswordError('Las contraseñas no coinciden');
-    }
-  }, [formData.password, formData.confirmPassword]);
-
-
-  return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-gray-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8">
-        {registrationSuccess ? (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">¡Registro Exitoso!</h2>
-            <p className="mb-4">Se ha enviado un correo de verificación a tu dirección de email.</p>
-            <p>Por favor, verifica tu correo para activar tu cuenta.</p>
-            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la página de inicio en 5 segundos...</p>
-          </div>
-        ) : (
-          <>
-            <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Registro</h2>
-            <p className="text-center text-gray-600 mb-8">Crea una nueva cuenta</p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                <input
-                  id="nombre"
-                  name="nombre"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="apellido_paterno" className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
-                <input
-                  id="apellido_paterno"
-                  name="apellido_paterno"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.apellido_paterno}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="apellido_materno" className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
-                <input
-                  id="apellido_materno"
-                  name="apellido_materno"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.apellido_materno}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="boleta" className="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
-                <input
-                  id="boleta"
-                  name="boleta"
-                  type="text"
-                  required
-                  className={`w-full px-3 py-2 border ${errors.boleta ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-                  value={formData.boleta}
-                  onChange={handleChange}
-                />
-                {errors.boleta && (
-                  <p className="text-red-500 text-sm mt-1">{errors.boleta}</p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Nuevos campos de contraseña */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className={`w-full px-3 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contraseña</label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {passwordError && (
-                <div className="text-red-500 text-sm">{passwordError}</div>
-              )}
-
-              <div>
-                <label htmlFor="carrera" className="block text-sm font-medium text-gray-700 mb-1">
-                  Carrera
-                </label>
-                <select
-                  id="carrera"
-                  name="carrera"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.carrera}
-                  onChange={handleChange}
-                >
-                  <option value="">Selecciona una carrera</option>
-                  <option value="ISC">Sistemas Computacionales</option>
-                  <option value="LCD">Licenciatura en Ciencia de Datos</option>
-                  <option value="IIA">Inteligencia Artificial</option>
-                </select>
-
-                {/* Plan de estudios condicionado por la carrera */}
-                <div>
-                  <label htmlFor="plan_estudios" className="block text-sm font-medium text-gray-700 mb-1 mt-4">
-                    Plan de estudios
-                  </label>
-                  {formData.carrera === 'ISC' ? (
-                    <select
-                      id="plan_estudios"
+              <div className="mt-4">
+                {formData.carrera === 'ISC' ? (
+                  <select
+                    className="w-full px-3 py-2 border rounded-lg"
+                    name="plan_estudios"
+                    value={formData.plan_estudios}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Selecciona un plan</option>
+                    <option value="2009">2009</option>
+                    <option value="2020">2020</option>
+                  </select>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value="2020"
+                      className="w-full px-3 py-2 border rounded-lg bg-gray-50 cursor-not-allowed"
+                      disabled
+                    />
+                    <input
+                      type="hidden"
                       name="plan_estudios"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={formData.plan_estudios}
-                      onChange={handleChange}
-                    >
-                      <option value="">Selecciona un plan</option>
-                      <option value="2009">2009</option>
-                      <option value="2020">2020</option>
-                    </select>
-                  ) : (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value="2020"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
-                        disabled
-                      />
-                      <input
-                        type="hidden"
-                        name="plan_estudios"
-                        value="2020"
-                      />
-                      {(formData.carrera === 'LCD' || formData.carrera === 'IIA') && (
-                        <p className="mt-1 text-sm text-gray-500">
-                          Para {formData.carrera === 'LCD' ? 'Licenciatura en Ciencia de Datos ' : 'Inteligencia Artificial '}
-                          solo está disponible el plan 2020
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Áreas de conocimiento (mínimo 3)
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
-                  onChange={handleAreaChange}
-                  value=""
-                >
-                  <option value="">Selecciona un área</option>
-                  <option value="other">Otra área...</option>
-                  {areas.map(area => (
-                    <option key={area.id} value={area.id}>{area.nombre}</option>
-                  ))}
-                </select>
-
-                {/* Popup para área personalizada */}
-                {showCustomAreaPopup && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                      <h3 className="text-lg font-semibold mb-4">Agregar área personalizada</h3>
-                      <input
-                        type="text"
-                        value={customArea}
-                        onChange={(e) => setCustomArea(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
-                        placeholder="Ingresa el nombre del área"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowCustomAreaPopup(false);
-                            setCustomArea('');
-                          }}
-                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleAddCustomArea}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          Agregar
-                        </button>
-                      </div>
-                    </div>
+                      value="2020"
+                    />
+                    {(formData.carrera === 'LCD' || formData.carrera === 'IIA') && (
+                      <motion.p
+                        className="mt-1 text-sm text-gray-500"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        Para {formData.carrera === 'LCD' ? 'Licenciatura en Ciencia de Datos ' : 'Inteligencia Artificial '}
+                        solo está disponible el plan 2020
+                      </motion.p>
+                    )}
                   </div>
                 )}
+              </div>
 
-                {/* Mostrar áreas seleccionadas */}
-                <div className="space-y-2">
-                  {formData.areas_ids.map(areaId => {
-                    const area = areas.find(a => a.id === areaId);
-                    return area ? (
-                      <div key={area.id} className="flex items-center justify-between bg-blue-50 p-2 rounded">
-                        <span>{area.nombre}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeArea(area.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : null;
-                  })}
-                  {formData.areas_custom.map(area => (
-                    <div key={area} className="flex items-center justify-between bg-blue-50 p-2 rounded">
-                      <span>{area}</span>
+            </div>
+          </motion.div>
+        );
+
+      case 3:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <div className="space-y-4">
+              <h3 className="font-medium">Áreas de conocimiento (mín. 3)</h3>
+              <select
+                className="w-full px-3 py-2 border rounded-lg"
+                onChange={(e) => {
+                  if (e.target.value === 'other') {
+                    setShowCustomAreaPopup(true);
+                  } else {
+                    const areaId = parseInt(e.target.value);
+                    if (!formData.areas_ids.includes(areaId)) {
+                      setFormData(prev => ({
+                        ...prev,
+                        areas_ids: [...prev.areas_ids, areaId]
+                      }));
+                    }
+                  }
+                  e.target.value = '';
+                }}
+              >
+                <option value="">Seleccionar área</option>
+                <option value="other">Otra área...</option>
+                {areas.map(area => (
+                  <option key={area.id} value={area.id}>{area.nombre}</option>
+                ))}
+              </select>
+
+              <div className="space-y-2">
+                {formData.areas_ids.map(areaId => {
+                  const area = areas.find(a => a.id === areaId);
+                  return area ? (
+                    <div key={area.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                      <span>{area.nombre}</span>
                       <button
                         type="button"
-                        onClick={() => removeCustomArea(area)}
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          areas_ids: prev.areas_ids.filter(id => id !== areaId)
+                        }))}
                         className="text-red-500 hover:text-red-700"
                       >
-                        ×
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
-                  ))}
-                </div>
-
-                {areaError && (
-                  <p className="text-red-500 text-sm mt-1">{areaError}</p>
-                )}
+                  ) : null;
+                })}
+                {formData.areas_custom.map(area => (
+                  <div key={area} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                    <span>{area}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        areas_custom: prev.areas_custom.filter(a => a !== area)
+                      }))}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
-              {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                  <span className="block sm:inline">{error}</span>
-                </div>
-              )}
-              <button
-                type="submit"
-                className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+            </div>
+          </motion.div>
+        );
+    }
+  };
+
+  return (
+    <AuthLayout>
+      <BackButton />
+
+      <AuthCard>
+        <div className="p-8 space-y-6">
+          <Logo />
+
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-gray-800">Crear cuenta</h2>
+            <p className="text-gray-600">Paso {currentStep} de 3</p>
+          </div>
+
+          <div className="flex justify-center space-x-2 mb-8">
+            {[1, 2, 3].map((step) => (
+              <motion.div
+                key={step}
+                className={`h-2 rounded-full ${step <= currentStep ? 'bg-primary' : 'bg-gray-200'
+                  }`}
+                style={{ width: '3rem' }}
+                initial={{ width: 0 }}
+                animate={{ width: '3rem' }}
+                transition={{ duration: 0.3 }}
+              />
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {renderStepContent()}
+
+            {error && (
+              <motion.div
+                className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
               >
-                Registrarse
+                {error}
+              </motion.div>
+            )}
+
+            <div className="flex gap-4">
+              {currentStep > 1 && (
+                <AuthButton
+                  type="button"
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                >
+                  Anterior
+                </AuthButton>
+              )}
+              <AuthButton
+                type="submit"
+                isLoading={isLoading}
+              >
+                {currentStep === 3 ? 'Registrarse' : 'Siguiente'}
+              </AuthButton>
+            </div>
+          </form>
+        </div>
+      </AuthCard>
+
+      {/* Modal para área personalizada */}
+      {showCustomAreaPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            className="bg-white p-6 rounded-lg shadow-lg w-96"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            <h3 className="text-lg font-semibold mb-4">Agregar área personalizada</h3>
+            <input
+              type="text"
+              value={customArea}
+              onChange={(e) => setCustomArea(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg mb-4"
+              placeholder="Nombre del área"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustomAreaPopup(false);
+                  setCustomArea('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
               </button>
-            </form>
-          </>
-        )}
-      </div>
-    </div>
+              <button
+                type="button"
+                onClick={handleAddCustomArea}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              >
+                Agregar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AuthLayout>
   );
 };
 
-export default Register;
+export default Registro;
