@@ -28,6 +28,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const [wsNotifications, setWsNotifications] = useState<WebSocket | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [shouldRefreshList, setShouldRefreshList] = useState(false);
+
   
 
   const fetchConversations = async () => {
@@ -70,9 +71,11 @@ const ConversationList: React.FC<ConversationListProps> = ({
   useEffect(() => {
     fetchConversations();
     updateConversations();
+    const token = localStorage.getItem('accessToken');
+    
 
     // Configurar WebSocket para notificaciones
-    const wsUrl = `ws://localhost:8000/ws/notifications/`;
+    const wsUrl = `ws://localhost:8000/ws/notifications/?token=${token}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
