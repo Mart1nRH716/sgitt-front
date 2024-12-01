@@ -30,6 +30,9 @@ const EditarPerfilModal: React.FC<EditarPerfilModalProps> = ({
   const [nuevaArea, setNuevaArea] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [disponibilidad, setDisponibilidad] = useState<number>(
+    userType === 'profesor' ? (currentData as any).disponibilidad || 0 : 0
+  );
 
   useEffect(() => {
     const fetchMaterias = async () => {
@@ -94,16 +97,12 @@ const EditarPerfilModal: React.FC<EditarPerfilModalProps> = ({
         return;
       }
 
-      if (userType === 'profesor' && selectedMaterias.length < 3) {
-        setError('Debes seleccionar al menos 3 materias');
-        setIsLoading(false);
-        return;
-      }
+      
 
       const data = {
         areas_ids: selectedMaterias,
         areas_custom: userType === 'alumno' ? selectedAreas : undefined,
-        ...(userType === 'profesor' && { areas_custom: selectedAreas }),
+        ...(userType === 'profesor' && { areas_custom: selectedAreas,disponibilidad: disponibilidad  }),
         materias_ids: userType === 'profesor' ? selectedMaterias : undefined
       };
 
@@ -183,8 +182,30 @@ const EditarPerfilModal: React.FC<EditarPerfilModalProps> = ({
           ) : (
             // Sección para profesores
             <>
+            
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-2">Disponibilidad</h3>
+                    <input
+                      type="number"
+                      min="0"
+                      max="5"
+                      value={disponibilidad}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (!isNaN(value) && value >= 0 && value <= 5) {
+                          setDisponibilidad(value);
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Número de espacios disponibles (0-5)"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Ingrese un número entre 0 y 5 para indicar su disponibilidad actual
+                    </p>
+                  </div>
+                
               <div>
-                <h3 className="font-semibold text-gray-700 mb-2">Materias (mínimo 3)</h3>
+                <h3 className="font-semibold text-gray-700 mb-2">Materias</h3>
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
                   onChange={handleAreaChange}

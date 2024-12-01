@@ -14,6 +14,8 @@ import {
   Logo 
 } from './AuthComponents';
 import { motion } from 'framer-motion';
+import CambioContrasenaModal from './CambioContrasenaModal';
+import AgregarAreasModal from './AgregarAreasModal';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -21,6 +23,13 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+
+
+  const [showAreasModal, setShowAreasModal] = useState(false);
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +44,7 @@ const Login = () => {
       localStorage.setItem('user-Type', response.user_type);
       
       if (response.user_type === 'profesor' && response.primer_inicio) {
-        window.location.href = '/cambiar-password';
+        setShowPasswordModal(true);
       } else {
         window.location.href = '/home';
       }
@@ -112,6 +121,26 @@ const Login = () => {
               Iniciar Sesión
             </AuthButton>
           </form>
+          {showPasswordModal && (
+              <CambioContrasenaModal
+                onPasswordChanged={() => {
+                  setShowPasswordModal(false);
+                  setShowAreasModal(true);
+                }}
+              />
+            )}
+            {showAreasModal && (
+              <AgregarAreasModal
+                onSkip={() => {
+                  setShowAreasModal(false);
+                  window.location.href = '/home';
+                }}
+                onComplete={() => {
+                  setShowAreasModal(false);
+                  window.location.href = '/home';
+                }}
+              />
+            )}
 
           <div className="text-center space-y-2">
           <button 
