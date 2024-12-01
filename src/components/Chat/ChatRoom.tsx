@@ -152,6 +152,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setMessages(response.data);
+        scrollToBottom();
         await markAllMessagesAsRead(response.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -191,9 +192,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  //useEffect(() => {
+    //scrollToBottom();
+  //}, [messages]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,6 +218,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   
       // Añadir el mensaje al estado local inmediatamente
       setMessages(prevMessages => [...prevMessages, response.data]);
+      scrollToBottom();
   
       // Enviar mensaje a través de WebSocket si está conectado
       if (ws?.readyState === WebSocket.OPEN) {
