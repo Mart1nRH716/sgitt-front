@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { UserCircle2, Users } from 'lucide-react';
 import axios from 'axios';
 import AuthService from '@/app/utils/authService';
-
+import { Plus } from 'lucide-react';
+import CreateChatDialog from './CreateChatDialog';
 interface Conversation {
   id: number;
   name: string;
@@ -25,6 +26,9 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wsNotifications, setWsNotifications] = useState<WebSocket | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [shouldRefreshList, setShouldRefreshList] = useState(false);
+  
 
   const fetchConversations = async () => {
     try {
@@ -154,10 +158,35 @@ const ConversationList: React.FC<ConversationListProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="text-xl font-semibold">Mensajes</h2>
+        <button
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="ml-auto p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Nueva conversación"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
         <button className="p-2 hover:bg-gray-100 rounded-full">
           <Users className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Create Chat Dialog */}
+      <CreateChatDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onConversationCreated={(conversation) => {
+          const fullConversation: Conversation = {
+            ...conversation,
+            last_message: '',
+            unread_count: 0
+          };
+          setIsCreateDialogOpen(false);
+          
+          onSelectConversation(fullConversation);
+          setShouldRefreshList(true);
+          // Aquí podrías actualizar la lista de conversaciones
+        }}
+      />
 
       {/* Lista de conversaciones */}
       <div className="flex-1 overflow-y-auto">

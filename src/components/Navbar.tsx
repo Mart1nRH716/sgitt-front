@@ -21,6 +21,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
       case '/perfil': return 'Mi Perfil';
       case '/perfil/mispropuestas': return 'Mis Propuestas';
       case '/ayuda': return 'Ayuda';
+      case '/chat': return 'Chat';
       default: return 'SGITT';
     }
   };

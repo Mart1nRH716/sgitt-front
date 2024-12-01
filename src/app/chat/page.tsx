@@ -7,6 +7,7 @@ import CreateChatDialog from '@/components/Chat/CreateChatDialog';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
+import Layout from '@/components/Layout';
 
 interface Conversation {
   id: number;
@@ -62,27 +63,15 @@ const ChatPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+
+    <Layout>
+    <div className="flex h-[calc(90vh-90px)]">
       {/* Chat Container */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div className="w-80 bg-white border-r flex flex-col">
           {/* Sidebar Header */}
-          <div className="p-4 border-b flex items-center bg-white">
-            <Link href="/home" className="flex items-center gap-2 hover:opacity-80">
-              <h1 className="text-xl font-bold text-oscure">
-                SGI<span className="text-secondary">TT</span>
-              </h1>
-            </Link>
-            <h1 className="text-xl font-semibold ml-2">| Chat</h1>
-            <button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="ml-auto p-2 hover:bg-gray-100 rounded-full transition-colors"
-              title="Nueva conversación"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
+          
 
           {/* Conversations List */}
           <div className="flex-1 overflow-y-auto">
@@ -127,11 +116,10 @@ const ChatPage = () => {
       />
 
       {/* Footer */}
-      <div className="bg-white border-t py-2 px-4 text-center text-sm text-gray-500">
-        © 2024 SGITT. Todos los derechos reservados.
-      </div>
     </div>
+    </Layout>
   );
+
 };
 
 export default ChatPage;
