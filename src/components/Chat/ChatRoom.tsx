@@ -51,6 +51,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
       message.sender_email !== currentUserEmail &&
       !message.read_by.some(user => user.email === currentUserEmail)
     );
+    scrollToBottom();
 
     for (const message of unreadMessages) {
       await markMessageAsRead(message.id);
@@ -102,9 +103,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
           const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
           if (!messageExists) {
             // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
+            scrollToBottom();
             if (newMessage.sender_email !== currentUserEmail && 
                 document.visibilityState === 'visible') {
               markMessageAsRead(newMessage.id);
+              scrollToBottom();
             }
             return [...prevMessages, newMessage];
           }
@@ -152,7 +155,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setMessages(response.data);
-        scrollToBottom();
+        //scrollToBottom();
         await markAllMessagesAsRead(response.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
