@@ -231,13 +231,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   // (Component return statement with JSX)
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="p-4 border-b border-gray-200">
+    <div className="flex flex-col h-full">
+      {/* Header del chat */}
+      <div className="p-4 border-b bg-white">
         <h2 className="text-lg font-semibold">
           {conversation?.is_group 
-            ? conversation.name 
+            ? conversation?.name 
             : conversation?.participants
-                .filter(p => p.email !== currentUserEmail)
+                .filter(p => p.email !== localStorage.getItem('userEmail'))
                 .map(p => `${p.first_name} ${p.last_name}`)
                 .join(', ')}
         </h2>
@@ -246,9 +247,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         </p>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
-        {messages.map((message) => {
-          const isCurrentUser = message.sender_email === currentUserEmail;
+      {/* Área de mensajes con scroll */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {messages.map((message, index) => {
+          const isCurrentUser = message.sender_email === localStorage.getItem('userEmail');
           return (
             <div key={message.id} className={`mb-4 flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[70%] ${isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100'} rounded-lg p-3`}>
@@ -266,7 +268,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
+      {/* Input de mensaje */}
+      <form onSubmit={sendMessage} className="p-4 border-t bg-white">
         <div className="flex gap-2">
           <input
             type="text"
