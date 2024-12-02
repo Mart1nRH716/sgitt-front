@@ -21,6 +21,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
       case '/perfil': return 'Mi Perfil';
       case '/perfil/mispropuestas': return 'Mis Propuestas';
       case '/ayuda': return 'Ayuda';
+      case '/chat': return 'Chat';
       default: return 'SGITT';
     }
   };
@@ -45,10 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
             <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-help2'></span>
           </Link>
           
-          <Link href="/notificaciones" className='relative text-secondary hover:text-primary transition-colors'>
-            <FiBell className='text-2xl' />
-            <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-help2'></span>
-          </Link>
+          
         </div>
       </div>
     </nav>

@@ -51,6 +51,7 @@ const Registro = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCustomAreaPopup, setShowCustomAreaPopup] = useState(false);
   const router = useRouter();
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -70,16 +71,16 @@ const Registro = () => {
       setCurrentStep(currentStep + 1);
       return;
     }
-
+  
     setIsLoading(true);
     setError('');
-
+  
     try {
       await register(formData);
-      // Mostrar mensaje de éxito y redireccionar
+      setRegistrationSuccess(true); // Marcar el registro como exitoso
       setTimeout(() => {
-        router.push('/login'); 
-      }, 5000);
+        router.push('/login');
+      }, 10000);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Error en el registro');
     } finally {
@@ -334,6 +335,34 @@ const Registro = () => {
       <AuthCard>
         <div className="p-8 space-y-6">
           <Logo />
+          {registrationSuccess ? (
+      <motion.div
+        className="text-center space-y-4"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+      >
+        <div className="text-green-500 text-5xl mb-4">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 10 }}
+          >
+            ✓
+          </motion.div>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800">¡Registro Exitoso!</h2>
+        <p className="text-gray-600">
+          Hemos enviado un correo de verificación a tu dirección de email.
+        </p>
+        <p className="text-gray-600">
+          Por favor, verifica tu correo para activar tu cuenta.
+        </p>
+        <p className="text-sm text-gray-500 mt-4">
+          Serás redirigido a la página de inicio de sesión en 10 segundos...
+        </p>
+      </motion.div>
+    ) : (
+      <>
 
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold text-gray-800">Crear cuenta</h2>
@@ -384,6 +413,8 @@ const Registro = () => {
               </AuthButton>
             </div>
           </form>
+          </>
+    )}
         </div>
       </AuthCard>
 

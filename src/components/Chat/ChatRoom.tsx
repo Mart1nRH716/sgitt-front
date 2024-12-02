@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { useCallback } from 'react';
 
 interface Message {
   id: number;
@@ -10,6 +9,7 @@ interface Message {
   sender_name: string;
   timestamp: string;
   read_by: Array<{ id: number; email: string }>;
+  conversation_id: number;
 }
 
 interface ChatRoomProps {
@@ -28,32 +28,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const router = useRouter();
   const currentUserEmail = localStorage.getItem('userEmail');
-  const messageQueue = useRef<Message[]>([]);
-
-  // Función para procesar mensajes entrantes
-  const handleNewMessage = useCallback((newMessage: Message) => {
-    setMessages(prevMessages => {
-      // Verificar si el mensaje ya existe
-      const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
-      if (!messageExists) {
-        const updatedMessages = [...prevMessages, newMessage];
-        return updatedMessages;
-      }
-      return prevMessages;
-    });
-
-    // Marcar como leído si es necesario
-    if (newMessage.sender_email !== currentUserEmail && 
-        document.visibilityState === 'visible') {
-      markMessageAsRead(newMessage.id);
-    }
-  }, [currentUserEmail]);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const [wsRetries, setWsRetries] = useState(0);
+  const MAX_RETRIES = 5;
+  const [isWindowActive, setIsWindowActive] = useState(document.visibilityState === 'visible');
 
   const markMessageAsRead = async (messageId: number) => {
     try {
       const token = localStorage.getItem('accessToken');
       await axios.post(
-        `http://localhost:8000/api/chat/messages/${messageId}/mark_as_read/`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chat/messages/${messageId}/mark_as_read/`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -71,39 +56,27 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
     for (const message of unreadMessages) {
       await markMessageAsRead(message.id);
     }
+    scrollToBottom();
   };
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!conversation) return;
+  const handleNewMessage = useCallback((newMessage: Message) => {
+    if (!conversation || newMessage.conversation_id !== conversation.id) return;
 
-      try {
-        const token = localStorage.getItem('accessToken');
-        const response = await axios.get(
-          `http://localhost:8000/api/chat/messages/?conversation_id=${conversation.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setMessages(response.data);
-        await markAllMessagesAsRead(response.data);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
+    setMessages(prevMessages => {
+      const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
+      if (!messageExists) {
+        if (newMessage.sender_email !== currentUserEmail && isWindowActive) {
+          markMessageAsRead(newMessage.id);
+          scrollToBottom();
+        }
+        return [...prevMessages, newMessage];
       }
-    };
+      return prevMessages;
+    });
+  }, [conversation, currentUserEmail, isWindowActive]);
 
-    fetchMessages();
-    
-    // Configurar un intervalo para verificar y marcar mensajes como leídos
-    const checkInterval = setInterval(() => {
-      if (document.visibilityState === 'visible' && messages.length > 0) {
-        markAllMessagesAsRead(messages);
-      }
-    }, 5000);
-
-    return () => clearInterval(checkInterval);
-  }, [conversation]);
-
-  useEffect(() => {
-    if (!conversation) return;
+  const connectWebSocket = useCallback(() => {
+    if (!conversation || wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -111,88 +84,122 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
       return;
     }
 
-    const websocket = new WebSocket(`ws://localhost:8000/ws/chat/${conversation.id}/`);
-    
-    websocket.onopen = () => {
-      console.log('Connected to WebSocket');
-      while (messageQueue.current.length > 0) {
-        const message = messageQueue.current.shift();
-        if (message) {
-          handleNewMessage(message);
-        }
+    const ws = new WebSocket(`ws://localhost:8000/ws/chat/${conversation.id}/?token=${token}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      setWs(ws);
+      setWsRetries(0);
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'message') {
+        handleNewMessage(data.message);
       }
     };
 
-    websocket.onmessage = async (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === 'message') {
-      const newMessage = data.message;
-      // Usar una función de actualización para evitar problemas de concurrencia
-      setMessages(prevMessages => {
-        // Verificar si el mensaje ya existe
-        const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
-        if (!messageExists) {
-          return [...prevMessages, newMessage];
-        }
-        return prevMessages;
-      });
+    ws.onclose = (event) => {
+      console.log('WebSocket closed');
+      setWs(null);
       
-      // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
-      if (newMessage.sender_email !== currentUserEmail && 
-          document.visibilityState === 'visible') {
-        await markMessageAsRead(newMessage.id);
+      if (!event.wasClean && wsRetries < MAX_RETRIES) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setWsRetries(prev => prev + 1);
+          connectWebSocket();
+        }, Math.min(1000 * Math.pow(2, wsRetries), 10000));
       }
-    }
-  };
-
-    websocket.onclose = () => {
-      console.log('Disconnected from WebSocket');
     };
-
-    setWs(websocket);
 
     return () => {
-      websocket.close();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close(1000, 'Component unmounting');
+      }
     };
-  }, [conversation, router, currentUserEmail]);
+  }, [conversation, router, handleNewMessage, wsRetries]);
 
-  // Agregar listener para el evento de visibilidad del documento
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && messages.length > 0) {
-        markAllMessagesAsRead(messages);
+      const isVisible = document.visibilityState === 'visible';
+      setIsWindowActive(isVisible);
+      
+      if (isVisible) {
+        if (messages.length > 0) {
+          markAllMessagesAsRead(messages);
+        }
+        if (wsRef.current?.readyState === WebSocket.CLOSED) {
+          connectWebSocket();
+        }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [messages]);
+    window.addEventListener('focus', () => setIsWindowActive(true));
+    window.addEventListener('blur', () => setIsWindowActive(false));
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', () => setIsWindowActive(true));
+      window.removeEventListener('blur', () => setIsWindowActive(false));
+    };
+  }, [messages, connectWebSocket]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const fetchMessages = async () => {
+      if (!conversation) return;
+      
+      try {
+        const token = localStorage.getItem('accessToken');
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chat/messages/?conversation_id=${conversation.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setMessages(response.data);
+        if (isWindowActive) {
+          await markAllMessagesAsRead(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    fetchMessages();
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000, 'Component unmounting');
+      }
+    };
+  }, [conversation, isWindowActive, connectWebSocket]);
+
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isWindowActive) {
+      scrollToBottom();
+    }
+  }, [messages, isWindowActive]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !ws || !conversation) return;
+    if (!newMessage.trim() || !conversation) return;
 
     try {
       const token = localStorage.getItem('accessToken');
       const userId = localStorage.getItem('userId');
 
-      // Enviar mensaje a través de WebSocket
-      ws.send(JSON.stringify({
-        message: newMessage,
-        user_id: userId
-      }));
-
-      // Guardar en la base de datos y obtener la respuesta
       const response = await axios.post(
-        'http://localhost:8000/api/chat/messages/',
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chat/messages/`,
         {
           content: newMessage,
           conversation_id: conversation.id
@@ -202,41 +209,46 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         }
       );
 
-      // Actualizar el estado local con el nuevo mensaje
-      setMessages(prev => [...prev, response.data]);
+      setMessages(prevMessages => [...prevMessages, response.data]);
+      scrollToBottom();
+
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          message: newMessage,
+          user_id: userId
+        }));
+      } else {
+        connectWebSocket();
+      }
+
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Selecciona una conversación para comenzar</p>
-      </div>
-    );
-  }
+  // Rest of your render code remains the same...
+  // (Component return statement with JSX)
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+    <div className="flex flex-col h-full">
+      {/* Header del chat */}
+      <div className="p-4 border-b bg-white">
         <h2 className="text-lg font-semibold">
-          {conversation.is_group 
-            ? conversation.name 
-            : conversation.participants
+          {conversation?.is_group 
+            ? conversation?.name 
+            : conversation?.participants
                 .filter(p => p.email !== localStorage.getItem('userEmail'))
                 .map(p => `${p.first_name} ${p.last_name}`)
                 .join(', ')}
         </h2>
         <p className="text-sm text-gray-500">
-          {conversation.participants.length} participantes
+          {conversation?.participants.length} participantes
         </p>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      {/* Área de mensajes con scroll */}
+      <div className="flex-1 overflow-y-auto p-4">
         {messages.map((message, index) => {
           const isCurrentUser = message.sender_email === localStorage.getItem('userEmail');
           return (
@@ -256,8 +268,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
+      {/* Input de mensaje */}
+      <form onSubmit={sendMessage} className="p-4 border-t bg-white">
         <div className="flex gap-2">
           <input
             type="text"

@@ -34,6 +34,7 @@ interface ProfesorData extends BaseUserData {
   apellido_paterno: string;
   es_profesor: boolean;
   departamento: string;
+  disponibilidad: number;
 }
 
 const MainProfile = () => {
@@ -191,6 +192,13 @@ const MainProfile = () => {
                                     <p><strong>Apellido Materno:</strong> {profesorData.apellido_materno}</p>
                                     <p><strong>Email:</strong> {profesorData.email}</p>
                                     <p><strong>Departamento:</strong> {profesorData.departamento}</p>
+                                    <p><strong>Disponibilidad:</strong> {' '}
+                                    <span className={profesorData.disponibilidad > 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {profesorData.disponibilidad > 0 
+                                        ? `${profesorData.disponibilidad} espacios disponibles` 
+                                        : 'Sin disponibilidad'}
+                                    </span>
+                                    </p>
                                 </div>
                             </div>
 

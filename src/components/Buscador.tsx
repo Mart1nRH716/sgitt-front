@@ -23,6 +23,7 @@ interface Profesor {
   areas_profesor: Array<{id: number, nombre: string}>;
   departamento: string;  
   user_id: number;
+  disponibilidad: number;
 }
 
 interface Alumno {
@@ -147,6 +148,24 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
               <p className="text-gray-700 text-sm flex items-center gap-2">
                 <span className="font-semibold">Carrera:</span>
                 <span className="text-gray-600">{(resultado as Alumno).carrera}</span>
+              </p>
+            )}
+            {esProfesor && (
+              <p className="text-gray-700 text-sm flex items-center gap-2">
+                <span className="font-semibold">Disponibilidad:</span>
+                <span className={`${
+                  (resultado as Profesor).disponibilidad === 0 
+                    ? 'text-red-600'
+                    : (resultado as Profesor).disponibilidad <= 2
+                    ? 'text-yellow-600'
+                    : (resultado as Profesor).disponibilidad <= 4
+                    ? 'text-emerald-500'
+                    : 'text-green-600'
+                }`}>
+                  {(resultado as Profesor).disponibilidad > 0 
+                    ? `${(resultado as Profesor).disponibilidad} espacios disponibles` 
+                    : 'Sin disponibilidad'}
+                </span>
               </p>
             )}
           </div>
