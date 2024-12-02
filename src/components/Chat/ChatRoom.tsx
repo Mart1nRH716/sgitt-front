@@ -32,6 +32,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const [wsRetries, setWsRetries] = useState(0);
   const MAX_RETRIES = 5;
+  const [isWindowActive, setIsWindowActive] = useState(document.visibilityState === 'visible');
 
   const markMessageAsRead = async (messageId: number) => {
     try {
@@ -51,30 +52,28 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
       message.sender_email !== currentUserEmail &&
       !message.read_by.some(user => user.email === currentUserEmail)
     );
-    scrollToBottom();
 
     for (const message of unreadMessages) {
       await markMessageAsRead(message.id);
     }
+    scrollToBottom();
   };
 
   const handleNewMessage = useCallback((newMessage: Message) => {
     if (!conversation || newMessage.conversation_id !== conversation.id) return;
-  
+
     setMessages(prevMessages => {
-      // Verificar si el mensaje ya existe
       const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
       if (!messageExists) {
-        // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
-        if (newMessage.sender_email !== currentUserEmail && 
-            document.visibilityState === 'visible') {
+        if (newMessage.sender_email !== currentUserEmail && isWindowActive) {
           markMessageAsRead(newMessage.id);
+          scrollToBottom();
         }
         return [...prevMessages, newMessage];
       }
       return prevMessages;
     });
-  }, [conversation, currentUserEmail]);
+  }, [conversation, currentUserEmail, isWindowActive]);
 
   const connectWebSocket = useCallback(() => {
     if (!conversation || wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -97,41 +96,21 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'message') {
-        const newMessage = data.message;
-        setMessages(prevMessages => {
-          // Verificar si el mensaje ya existe
-          const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
-          if (!messageExists) {
-            // Si el mensaje es de otro usuario y la ventana está visible, márcalo como leído
-            scrollToBottom();
-            if (newMessage.sender_email !== currentUserEmail && 
-                document.visibilityState === 'visible') {
-              markMessageAsRead(newMessage.id);
-              scrollToBottom();
-            }
-            return [...prevMessages, newMessage];
-          }
-          return prevMessages;
-        });
+        handleNewMessage(data.message);
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       console.log('WebSocket closed');
       setWs(null);
       
-      // Intentar reconectar si no hemos excedido el máximo de intentos
-      if (wsRetries < MAX_RETRIES) {
+      if (!event.wasClean && wsRetries < MAX_RETRIES) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = setTimeout(() => {
           setWsRetries(prev => prev + 1);
           connectWebSocket();
-        }, Math.min(1000 * Math.pow(2, wsRetries), 10000)); // Backoff exponencial
+        }, Math.min(1000 * Math.pow(2, wsRetries), 10000));
       }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
     };
 
     return () => {
@@ -139,10 +118,36 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        ws.close();
+        ws.close(1000, 'Component unmounting');
       }
     };
   }, [conversation, router, handleNewMessage, wsRetries]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = document.visibilityState === 'visible';
+      setIsWindowActive(isVisible);
+      
+      if (isVisible) {
+        if (messages.length > 0) {
+          markAllMessagesAsRead(messages);
+        }
+        if (wsRef.current?.readyState === WebSocket.CLOSED) {
+          connectWebSocket();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', () => setIsWindowActive(true));
+    window.addEventListener('blur', () => setIsWindowActive(false));
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', () => setIsWindowActive(true));
+      window.removeEventListener('blur', () => setIsWindowActive(false));
+    };
+  }, [messages, connectWebSocket]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -155,8 +160,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setMessages(response.data);
-        //scrollToBottom();
-        await markAllMessagesAsRead(response.data);
+        if (isWindowActive) {
+          await markAllMessagesAsRead(response.data);
+        }
       } catch (error) {
         console.error('Error fetching messages:', error);
       }
@@ -166,48 +172,32 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
     connectWebSocket();
 
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000, 'Component unmounting');
       }
     };
-  }, [conversation, connectWebSocket]);
+  }, [conversation, isWindowActive, connectWebSocket]);
 
-  
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        if (messages.length > 0) {
-          markAllMessagesAsRead(messages);
-        }
-        // Reconectar WebSocket si es necesario
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-          connectWebSocket();
-        }
-      }
-    };
-  
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [messages, ws, connectWebSocket]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  //useEffect(() => {
-    //scrollToBottom();
-  //}, [messages]);
+    if (isWindowActive) {
+      scrollToBottom();
+    }
+  }, [messages, isWindowActive]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !conversation) return;
-  
+
     try {
       const token = localStorage.getItem('accessToken');
       const userId = localStorage.getItem('userId');
-  
-      // Primero guardar el mensaje en la base de datos
+
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chat/messages/`,
         {
@@ -218,54 +208,44 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-  
-      // Añadir el mensaje al estado local inmediatamente
+
       setMessages(prevMessages => [...prevMessages, response.data]);
       scrollToBottom();
-  
-      // Enviar mensaje a través de WebSocket si está conectado
+
       if (ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           message: newMessage,
           user_id: userId
         }));
       } else {
-        console.log('WebSocket not connected, reconnecting...');
         connectWebSocket();
       }
-  
+
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Selecciona una conversación para comenzar</p>
-      </div>
-    );
-  }
+  // Rest of your render code remains the same...
+  // (Component return statement with JSX)
 
   return (
     <div className="flex-1 flex flex-col bg-white">
-      {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold">
-          {conversation.is_group 
+          {conversation?.is_group 
             ? conversation.name 
-            : conversation.participants
+            : conversation?.participants
                 .filter(p => p.email !== currentUserEmail)
                 .map(p => `${p.first_name} ${p.last_name}`)
                 .join(', ')}
         </h2>
         <p className="text-sm text-gray-500">
-          {conversation.participants.length} participantes
+          {conversation?.participants.length} participantes
         </p>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto">
         {messages.map((message) => {
           const isCurrentUser = message.sender_email === currentUserEmail;
@@ -286,7 +266,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ conversation }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
       <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
         <div className="flex gap-2">
           <input
