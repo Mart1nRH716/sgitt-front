@@ -18,6 +18,11 @@ interface UserData {
   areas_custom: string[];
 }
 
+interface Confidence {
+  score: number;
+  level: string;
+}
+
 
 interface Credentials {
   email: string;
@@ -225,6 +230,7 @@ interface Profesor {
     nombre: string;
   }>;
   es_profesor: boolean;
+  confidence?: Confidence;
 }
 
 
