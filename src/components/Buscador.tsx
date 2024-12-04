@@ -13,6 +13,11 @@ interface Materia {
   nombre: string;
 }
 
+interface Confidence {
+  score: number;
+  level: string;
+}
+
 interface Profesor {
   id: number;
   email: string;
@@ -24,6 +29,7 @@ interface Profesor {
   departamento: string;  
   user_id: number;
   disponibilidad: number;
+confidence?: Confidence;
 }
 
 interface Alumno {
@@ -35,6 +41,7 @@ interface Alumno {
   carrera: string;
   areas_alumno: Array<{id: number, nombre: string}>;
   user_id: number;
+  confidence?: Confidence;
 }
 
 interface BuscadorProps {
@@ -50,6 +57,47 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [loadingContact, setLoadingContact] = useState<number | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsPerPage = 6;
+
+  // Función para manejar el cambio de página
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+   // Calcular índices para la paginación
+   const indexOfLastResult = currentPage * resultsPerPage;
+   const indexOfFirstResult = indexOfLastResult - resultsPerPage;
+   const currentResults = resultados.slice(indexOfFirstResult, indexOfLastResult);
+   const totalPages = Math.ceil(resultados.length / resultsPerPage);
+
+   // Componente de paginación
+  const Pagination = () => {
+    return (
+      <div className="flex justify-center items-center mt-6 gap-2">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary transition-colors"
+        >
+          Anterior
+        </button>
+        
+        <span className="mx-4 text-gray-600">
+          Página {currentPage} de {totalPages}
+        </span>
+
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary transition-colors"
+        >
+          Siguiente
+        </button>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const storedUserType = localStorage.getItem('user-Type') as 'alumno' | 'profesor';
@@ -112,6 +160,16 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
     const esProfesor = 'materias' in resultado;
     const Icon = esProfesor ? FaChalkboardTeacher : FaUserGraduate;
 
+    const getConfidenceColor = (level: string) => {
+      switch (level) {
+        case "Muy alta similitud": return "bg-green-100 text-green-800";
+        case "Alta similitud": return "bg-blue-100 text-blue-800";
+        case "Similitud moderada": return "bg-yellow-100 text-yellow-800";
+        case "Baja similitud": return "bg-orange-100 text-orange-800";
+        default: return "bg-red-100 text-red-800";
+      }
+    };
+
     return (
       <div key={resultado.id} 
            className='bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1'>
@@ -130,6 +188,13 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
               </p>
             </div>
           </div>
+
+           {/* Indicador de confiabilidad */}
+           {resultado.confidence && (
+              <div className={`px-3 py-1 rounded-full text-sm ${getConfidenceColor(resultado.confidence.level)}`}>
+                {resultado.confidence.level}
+              </div>
+            )}
           
           {/* Información de contacto */}
           
@@ -303,23 +368,27 @@ const Buscador: React.FC<BuscadorProps> = ({ onSearch }) => {
         )}
 
         {/* Resultados */}
-        {resultados.length > 0 ? (
+      {currentResults.length > 0 ? (
+        <>
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {resultados.map(renderResultado)}
+            {currentResults.map(renderResultado)}
           </div>
-        ) : (
-          hasSearched && !isLoading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <GiSharkFin className="text-6xl text-gray-400 mb-4" />
-              <p className="text-xl text-gray-500 text-center">
-                No se encontraron resultados para tu búsqueda
-              </p>
-              <p className="text-gray-400 mt-2 text-center">
-                Intenta con otros términos o áreas de conocimiento
-              </p>
-            </div>
-          )
-        )}
+          {resultados.length > resultsPerPage && <Pagination />}
+        </>
+      ) : (
+        hasSearched && !isLoading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <GiSharkFin className="text-6xl text-gray-400 mb-4" />
+            <p className="text-xl text-gray-500 text-center">
+              No se encontraron resultados para tu búsqueda
+            </p>
+            <p className="text-gray-400 mt-2 text-center">
+              Intenta con otros términos o áreas de conocimiento
+            </p>
+          </div>
+        )
+      )}
+
 
         {/* Estado de carga */}
         {isLoading && (
