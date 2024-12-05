@@ -42,6 +42,8 @@ const Login = () => {
       localStorage.setItem('refreshToken', response.refresh);
       localStorage.setItem('userEmail', response.user_email);
       localStorage.setItem('user-Type', response.user_type);
+      //Alamacenar isAdmin
+      localStorage.setItem('isAdmin', response.is_admin ? 'true' : 'false');
       
       if (response.user_type === 'profesor' && response.primer_inicio) {
         setShowPasswordModal(true);

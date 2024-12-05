@@ -1,5 +1,3 @@
-// src/app/admin/page.tsx
-
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,12 +12,15 @@ const AdminPage = () => {
 
   useEffect(() => {
     const checkAdminAccess = () => {
-      const isAdmin = localStorage.getItem('isAdmin') === 'true';
-      if (!isAdmin) {
+      const token = localStorage.getItem('accessToken');
+      const isAdmin = localStorage.getItem('isAdmin');
+      
+      if (!token || isAdmin !== 'true') {
         router.push('/home');
-      } else {
-        setIsLoading(false);
+        return;
       }
+      
+      setIsLoading(false);
     };
 
     checkAdminAccess();
@@ -30,9 +31,11 @@ const AdminPage = () => {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-    </div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
