@@ -3,6 +3,8 @@ import { Search, Download, Edit, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getAdminData, updateAdminItem, deleteAdminItem } from '../app/utils/api';
 import axios from "axios";
+import { PlusCircle } from 'lucide-react';
+import { createAdminItem } from '../app/utils/api';
 
 interface Profesor {
   id: number;
@@ -59,9 +61,11 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
-
+  
   const exportToCSV = () => {
-    let csvContent = '';
+    // Agregar BOM para Excel
+    const BOM = '\uFEFF';
+    let csvContent = BOM;
     let headers: string[] = [];
     
     // Definir headers según el tab activo
@@ -72,53 +76,246 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
     } else {
       headers = ['Nombre', 'Tipo', 'Autor', 'Fecha'];
     }
-
+  
     // Agregar headers
-    csvContent += headers.join(',') + '\n';
-
+    csvContent += headers.join(';') + '\n';
+  
+    // Función para escapar campos con comas y caracteres especiales
+    const escapeField = (field: any) => {
+      if (field === null || field === undefined) return '""';
+      return `"${String(field).replace(/"/g, '""')}"`;
+    };
+  
     // Agregar datos
     filterData().forEach((item) => {
       let row: string[] = [];
       if (activeTab === 'alumnos') {
         row = [
-          item.email,
-          item.nombre,
-          item.apellido_paterno,
-          item.apellido_materno,
-          item.boleta,
-          item.carrera
+          escapeField(item.email),
+          escapeField(item.nombre),
+          escapeField(item.apellido_paterno),
+          escapeField(item.apellido_materno),
+          escapeField(item.boleta),
+          escapeField(item.carrera)
         ];
       } else if (activeTab === 'profesores') {
         row = [
-          item.email,
-          item.nombre,
-          item.apellido_paterno,
-          item.apellido_materno,
-          item.departamento || 'No asignado'
+          escapeField(item.email),
+          escapeField(item.nombre),
+          escapeField(item.apellido_paterno),
+          escapeField(item.apellido_materno),
+          escapeField(item.departamento || 'No asignado')
         ];
       } else {
         row = [
-          item.nombre,
-          item.tipo_propuesta,
-          item.autor?.nombre || 'No disponible',
-          new Date(item.fecha_creacion).toLocaleDateString()
+          escapeField(item.nombre),
+          escapeField(item.tipo_propuesta),
+          escapeField(item.autor?.nombre || 'No disponible'),
+          escapeField(new Date(item.fecha_creacion).toLocaleDateString('es-ES'))
         ];
       }
-      csvContent += row.join(',') + '\n';
+      csvContent += row.join(';') + '\n';
     });
-
+  
     // Crear y descargar el archivo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `${activeTab}_${new Date().toISOString()}.csv`);
+    link.setAttribute('download', `${activeTab}_${new Date().toLocaleDateString('es-ES')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-// En src/components/TablesAdmin.tsx
+  const handleCreate = async () => {
+    try {
+      let formFields;
+      if (activeTab === 'alumnos') {
+        formFields = {
+          html: `
+            <div class="grid grid-cols-1 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input id="nombre" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
+                <input id="apellido_paterno" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
+                <input id="apellido_materno" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input id="email" type="email" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Boleta</label>
+                <input id="boleta" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Carrera</label>
+                <select id="carrera" class="w-full px-3 py-2 border rounded-md">
+                  <option value="ISC">Sistemas Computacionales</option>
+                  <option value="LCD">Ciencia de Datos</option>
+                  <option value="IIA">Inteligencia Artificial</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Plan de Estudios</label>
+                <select id="plan_estudios" class="w-full px-3 py-2 border rounded-md">
+                  <option value="2009">2009</option>
+                  <option value="2020">2020</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input id="password" type="password" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">¿Es administrador?</label>
+                <select id="is_admin" class="w-full px-3 py-2 border rounded-md">
+                  <option value="false">No</option>
+                  <option value="true">Sí</option>
+                </select>
+              </div>
+            </div>
+          `
+        };
+      } else if (activeTab === 'profesores') {
+        formFields = {
+          html: `
+            <div class="grid grid-cols-1 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input id="nombre" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
+                <input id="apellido_paterno" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
+                <input id="apellido_materno" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input id="email" type="email" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                <select id="departamento" class="w-full px-3 py-2 border rounded-md">
+                  <option value="CIC">CIC</option>
+                  <option value="FB">FB</option>
+                  <option value="FII">FII</option>
+                  <option value="ISC">ISC</option>
+                  <option value="POSGR">POSGR</option>
+                  <option value="SUB ACAD">SUB ACAD</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input id="password" type="password" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">¿Es administrador?</label>
+                <select id="is_admin" class="w-full px-3 py-2 border rounded-md">
+                  <option value="false">No</option>
+                  <option value="true">Sí</option>
+                </select>
+              </div>
+            </div>
+          `
+        };
+      } else {
+        formFields = {
+          html: `
+            <div class="grid grid-cols-1 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input id="nombre" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
+                <textarea id="objetivo" class="w-full px-3 py-2 border rounded-md" rows="3"></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Alumnos</label>
+                <input id="cantidad_alumnos" type="number" min="1" value="1" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Profesores</label>
+                <input id="cantidad_profesores" type="number" min="1" value="1" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Propuesta</label>
+                <select id="tipo_propuesta" class="w-full px-3 py-2 border rounded-md">
+                  <option value="TT1">TT1</option>
+                  <option value="Remedial">Remedial</option>
+                </select>
+              </div>
+            </div>
+          `
+        };
+      }
+  
+      const result = await Swal.fire({
+        title: 'Crear Nuevo',
+        html: formFields.html,
+        showCancelButton: true,
+        confirmButtonText: 'Crear',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+          const values: any = {};
+          
+          if (activeTab === 'alumnos') {
+            values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
+            values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
+            values.email = (document.getElementById('email') as HTMLInputElement).value;
+            values.boleta = (document.getElementById('boleta') as HTMLInputElement).value;
+            values.carrera = (document.getElementById('carrera') as HTMLSelectElement).value;
+            values.plan_estudios = (document.getElementById('plan_estudios') as HTMLSelectElement).value;
+            values.password = (document.getElementById('password') as HTMLInputElement).value;
+            values.confirmPassword = values.password;
+          } else if (activeTab === 'profesores') {
+            values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
+            values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
+            values.email = (document.getElementById('email') as HTMLInputElement).value;
+            values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
+            values.password = (document.getElementById('password') as HTMLInputElement).value;
+            values.confirmPassword = values.password;
+            values.es_profesor = true;
+          } else {
+            values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            values.objetivo = (document.getElementById('objetivo') as HTMLTextAreaElement).value;
+            values.cantidad_alumnos = parseInt((document.getElementById('cantidad_alumnos') as HTMLInputElement).value);
+            values.cantidad_profesores = parseInt((document.getElementById('cantidad_profesores') as HTMLInputElement).value);
+            values.tipo_propuesta = (document.getElementById('tipo_propuesta') as HTMLSelectElement).value;
+            values.visible = true;
+          }
+          
+          return values;
+        }
+      });
+  
+      if (result.isConfirmed && result.value) {
+        const newItem = await createAdminItem(activeTab, result.value);
+        await fetchData();
+        Swal.fire('¡Creado!', 'El elemento ha sido creado exitosamente.', 'success');
+      }
+    } catch (error) {
+      console.error('Error al crear:', error);
+      let errorMessage = 'No se pudo crear el elemento';
+      if (axios.isAxiosError(error)) {
+        errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+      }
+      Swal.fire('Error', errorMessage, 'error');
+    }
+  };
 
 const handleEdit = async (item: any) => {
   try {
@@ -172,6 +369,13 @@ const handleEdit = async (item: any) => {
                 <option value="2020" ${item.plan_estudios === '2020' ? 'selected' : ''}>2020</option>
               </select>
             </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">¿Es administrador?</label>
+              <select id="is_admin" class="w-full px-3 py-2 border rounded-md">
+                <option value="false" ${!item.is_admin ? 'selected' : ''}>No</option>
+                <option value="true" ${item.is_admin ? 'selected' : ''}>Sí</option>
+              </select>
+            </div>
           </div>
         `
       };
@@ -206,6 +410,13 @@ const handleEdit = async (item: any) => {
                 <option value="SUB ACAD" ${item.departamento === 'SUB ACAD' ? 'selected' : ''}>SUB ACAD</option>
               </select>
             </div>
+            <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">¿Es administrador?</label>
+            <select id="is_admin" class="w-full px-3 py-2 border rounded-md">
+              <option value="false" ${!item.is_admin ? 'selected' : ''}>No</option>
+              <option value="true" ${item.is_admin ? 'selected' : ''}>Sí</option>
+            </select>
+          </div>
           </div>
         `
       };
@@ -267,6 +478,7 @@ const handleEdit = async (item: any) => {
             values.plan_estudios = (document.getElementById('plan_estudios') as HTMLSelectElement).value;
             values.password = (document.getElementById('password') as HTMLInputElement).value;
             values.confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement).value;
+            values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value === 'true';
             values.user = {
                 email: values.email,
                 first_name: values.nombre,
@@ -278,6 +490,7 @@ const handleEdit = async (item: any) => {
             values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
             values.email = (document.getElementById('email') as HTMLInputElement).value;
             values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
+            values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value === 'true';
             values.user = {
                 email: values.email,
                 first_name: values.nombre,
@@ -533,25 +746,32 @@ const handleDelete = async (id: number) => {
 
       {/* Barra de búsqueda y exportación */}
       <div className="flex mb-6 gap-4">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder="Buscar..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        </div>
-        <button
-          onClick={exportToCSV}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
-          title="Exportar a CSV"
-        >
-          <Download size={18} />
-          <span>Exportar CSV</span>
-        </button>
-      </div>
+  <div className="relative flex-1">
+    <input
+      type="text"
+      placeholder="Buscar..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full pl-10 pr-4 py-2 border rounded-lg"
+    />
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+  </div>
+  <button
+    onClick={handleCreate}
+    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
+  >
+    <PlusCircle size={18} />
+    <span>Crear Nuevo</span>
+  </button>
+  <button
+    onClick={exportToCSV}
+    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+    title="Exportar a CSV"
+  >
+    <Download size={18} />
+    <span>Exportar CSV</span>
+  </button>
+</div>
 
       {/* Tabla */}
       <div className="overflow-x-auto bg-white rounded-lg shadow">

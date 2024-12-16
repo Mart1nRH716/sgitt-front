@@ -16,6 +16,7 @@ interface UserData {
   confirmPassword: string;
   areas_ids: number[];
   areas_custom: string[];
+  is_admin?: boolean;
 }
 
 interface Confidence {
@@ -698,7 +699,38 @@ export const getAdminData = async (type: 'alumnos' | 'profesores' | 'propuestas'
     throw error;
   }
 };
-// En src/app/utils/api.ts
+
+
+export const createAdminItem = async (type: 'alumnos' | 'profesores' | 'propuestas', data: any) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No se encontró el token de acceso');
+    }
+
+    // Asegurar que los datos incluyan el campo is_admin
+    const formattedData = {
+      ...data,
+      is_admin: (document.getElementById('is_admin') as HTMLInputElement)?.checked || false
+    };
+
+    const response = await axios.post(
+      `${API_URL}/crud/${type}/`,
+      formattedData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error creating admin item:', error);
+    throw error;
+  }
+};
+
 export const updateAdminItem = async (type: 'alumnos' | 'profesores' | 'propuestas', id: number, data: any) => {
   try {
     console.log(`Intentando actualizar ${type} con ID:`, id, 'Datos:', data);
@@ -726,6 +758,7 @@ export const updateAdminItem = async (type: 'alumnos' | 'profesores' | 'propuest
         plan_estudios: data.plan_estudios,
         password: data.password,
         confirm_password: data.confirm_password,
+        is_admin: data.is_admin,
         user: {
           id: id,
           email: data.email,
