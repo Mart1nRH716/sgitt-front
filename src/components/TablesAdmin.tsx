@@ -279,6 +279,7 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
             values.carrera = (document.getElementById('carrera') as HTMLSelectElement).value;
             values.plan_estudios = (document.getElementById('plan_estudios') as HTMLSelectElement).value;
             values.password = (document.getElementById('password') as HTMLInputElement).value;
+            values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value;
             values.confirmPassword = values.password;
           } else if (activeTab === 'profesores') {
             values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
@@ -287,6 +288,7 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
             values.email = (document.getElementById('email') as HTMLInputElement).value;
             values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
             values.password = (document.getElementById('password') as HTMLInputElement).value;
+            values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value;
             values.confirmPassword = values.password;
             values.es_profesor = true;
           } else {
@@ -303,7 +305,10 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
       });
   
       if (result.isConfirmed && result.value) {
-        const newItem = await createAdminItem(activeTab, result.value);
+        const newItem = await createAdminItem(activeTab, {
+          ...result.value,
+          is_admin: result.value.is_admin 
+        });
         await fetchData();
         Swal.fire('¡Creado!', 'El elemento ha sido creado exitosamente.', 'success');
       }

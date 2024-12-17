@@ -708,10 +708,10 @@ export const createAdminItem = async (type: 'alumnos' | 'profesores' | 'propuest
       throw new Error('No se encontró el token de acceso');
     }
 
-    // Asegurar que los datos incluyan el campo is_admin
+    // Asegurarse de que is_admin se envíe como booleano
     const formattedData = {
       ...data,
-      is_admin: (document.getElementById('is_admin') as HTMLInputElement)?.checked || false
+      is_admin: data.is_admin === 'true'
     };
 
     const response = await axios.post(
