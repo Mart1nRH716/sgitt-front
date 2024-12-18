@@ -190,7 +190,7 @@ const Registro = () => {
               required
             />
             <p className="text-sm text-gray-500 mt-1">
-                Inlcluye al menos una Mayúscula, Minúscula, y un Número. Debes tener al menos 8 carácteres
+                Inlcluye al menos una Mayúscula, Minúscula, y un Número. Debes tener al menos 8 carácteres.
             </p>
             <AuthInput
               icon={Lock}

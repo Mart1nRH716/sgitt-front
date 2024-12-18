@@ -314,9 +314,9 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
     } catch (error) {
       console.error('Error al crear:', error);
       let errorMessage = 'No se pudo crear el elemento';
-      if (axios.isAxiosError(error)) {
-        errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
-      }
+      // if (axios.isAxiosError(error)) {
+      //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+      // }
       Swal.fire('Error', errorMessage, 'error');
     }
   };
@@ -551,10 +551,10 @@ const handleEdit = async (item: any) => {
   } catch (error) {
     console.error('Error al editar:', error);
     let errorMessage = 'No se pudieron guardar los cambios';
-    if (axios.isAxiosError(error)) {
-      errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
-      console.log('Detalles del error:', error.response?.data);
-    }
+    // if (axios.isAxiosError(error)) {
+    //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+    //   console.log('Detalles del error:', error.response?.data);
+    // }
     Swal.fire('Error', errorMessage, 'error');
   }
 };
@@ -587,10 +587,10 @@ const handleDelete = async (id: number) => {
   } catch (error) {
     console.error('Error en la eliminación:', error);
     let errorMessage = 'No se pudo eliminar el elemento';
-    if (axios.isAxiosError(error)) {
-      errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
-      console.log('Detalles del error:', error.response?.data);
-    }
+    // if (axios.isAxiosError(error)) {
+    //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+    //   console.log('Detalles del error:', error.response?.data);
+    // }
     Swal.fire('Error', errorMessage, 'error');
   }
 };
