@@ -82,7 +82,7 @@ const Registro = () => {
         router.push('/login');
       }, 10000);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Error en el registro');
+      setError(error instanceof Error ? error.message : 'Error en el registro.Revisa el llenado de los campos o asegurate de que tu contraseña cumple los requisitos');
     } finally {
       setIsLoading(false);
     }
@@ -140,14 +140,18 @@ const Registro = () => {
               onChange={(e) => setFormData({ ...formData, apellido_paterno: e.target.value })}
               required
             />
-            <AuthInput
-              icon={User}
-              placeholder="Apellido Materno"
-              name="apellido_materno"
-              value={formData.apellido_materno}
-              onChange={(e) => setFormData({ ...formData, apellido_materno: e.target.value })}
-              required
-            />
+            <>
+              <AuthInput
+                icon={User}
+                placeholder="Apellido Materno (Opcional)"
+                name="apellido_materno"
+                value={formData.apellido_materno}
+                onChange={(e) => setFormData({ ...formData, apellido_materno: e.target.value })}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Este campo es opcional para personas extranjeras o que no cuenten con apellido materno
+              </p>
+            </>
             <AuthInput
               icon={Hash}
               placeholder="Boleta"
@@ -185,6 +189,9 @@ const Registro = () => {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
+            <p className="text-sm text-gray-500 mt-1">
+                Inlcluye al menos una Mayúscula, Minúscula, y un Número. Debes tener al menos 8 carácteres
+            </p>
             <AuthInput
               icon={Lock}
               type="password"

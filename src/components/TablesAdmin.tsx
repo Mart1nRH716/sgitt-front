@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Search, Download, Edit, Trash2 } from 'lucide-react';
+import { Search, Download, Edit, Trash2, PlusCircle } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getAdminData, updateAdminItem, deleteAdminItem } from '../app/utils/api';
 import axios from "axios";
-import { PlusCircle } from 'lucide-react';
 import { createAdminItem } from '../app/utils/api';
 
 interface Profesor {
@@ -331,6 +330,8 @@ const handleEdit = async (item: any) => {
     console.log('ID del item:', item.id);
     console.log('Tipo activo:', activeTab);
 
+    
+
     let formFields;
     if (activeTab === 'alumnos') {
       formFields = {
@@ -385,6 +386,10 @@ const handleEdit = async (item: any) => {
         `
       };
     } else if (activeTab === 'profesores') {
+      const materiasResponse = await axios.get(
+        'http://localhost:8000/api/materias/',
+      );
+      const todasLasMaterias = materiasResponse.data;
       formFields = {
         html: `
           <div class="grid grid-cols-1 gap-4">
@@ -414,6 +419,22 @@ const handleEdit = async (item: any) => {
                 <option value="POSGR" ${item.departamento === 'POSGR' ? 'selected' : ''}>POSGR</option>
                 <option value="SUB ACAD" ${item.departamento === 'SUB ACAD' ? 'selected' : ''}>SUB ACAD</option>
               </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Materias</label>
+              <div class="max-h-48 overflow-y-auto border rounded-md p-2">
+                ${todasLasMaterias.map((materia: { id: number; nombre: string }) => `
+                  <div class="flex items-center gap-2 p-1">
+                    <input 
+                      type="checkbox" 
+                      id="materia-${materia.id}" 
+                      value="${materia.id}"
+                      ${item.materias?.some((m: any) => m.id === materia.id) ? 'checked' : ''}
+                    >
+                    <label for="materia-${materia.id}">${materia.nombre}</label>
+                  </div>
+                `).join('')}
+              </div>
             </div>
             <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">¿Es administrador?</label>
@@ -496,6 +517,8 @@ const handleEdit = async (item: any) => {
             values.email = (document.getElementById('email') as HTMLInputElement).value;
             values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
             values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value === 'true';
+            values.materias_ids = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+            .map((cb: any) => parseInt(cb.value))
             values.user = {
                 email: values.email,
                 first_name: values.nombre,

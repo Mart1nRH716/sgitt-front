@@ -85,7 +85,7 @@ export const register = async (userData: UserData): Promise<ApiResponse> => {
       confirmPassword: userData.confirmPassword,
       nombre: userData.nombre,
       apellido_paterno: userData.apellido_paterno,
-      apellido_materno: userData.apellido_materno,
+      apellido_materno: userData.apellido_materno || '',
       boleta: userData.boleta,
       carrera: userData.carrera,
       plan_estudios: userData.plan_estudios,
