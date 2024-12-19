@@ -13,8 +13,8 @@ interface Profesor {
   apellido_materno: string;
   departamento: string;
   es_profesor: boolean;
-  materias: Array<{id: number; nombre: string}>;
-  areas_profesor: Array<{id: number; nombre: string}>;
+  materias: Array<{ id: number; nombre: string }>;
+  areas_profesor: Array<{ id: number; nombre: string }>;
   primer_inicio: boolean;
 }
 
@@ -60,13 +60,23 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
-  
+  const [materias, setMaterias] = useState<Array<{ id: number, nombre: string }>>([]);
+
+  const cargarMaterias = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/materias/');
+      setMaterias(response.data);
+    } catch (error) {
+      console.error('Error al cargar materias:', error);
+    }
+  };
+
   const exportToCSV = () => {
     // Agregar BOM para Excel
     const BOM = '\uFEFF';
     let csvContent = BOM;
     let headers: string[] = [];
-    
+
     // Definir headers según el tab activo
     if (activeTab === 'alumnos') {
       headers = ['Email', 'Nombre', 'Apellido Paterno', 'Apellido Materno', 'Boleta', 'Carrera'];
@@ -75,16 +85,16 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
     } else {
       headers = ['Nombre', 'Tipo', 'Autor', 'Fecha'];
     }
-  
+
     // Agregar headers
     csvContent += headers.join(';') + '\n';
-  
+
     // Función para escapar campos con comas y caracteres especiales
     const escapeField = (field: any) => {
       if (field === null || field === undefined) return '""';
       return `"${String(field).replace(/"/g, '""')}"`;
     };
-  
+
     // Agregar datos
     filterData().forEach((item) => {
       let row: string[] = [];
@@ -115,7 +125,7 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
       }
       csvContent += row.join(';') + '\n';
     });
-  
+
     // Crear y descargar el archivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const link = document.createElement('a');
@@ -184,6 +194,10 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
           `
         };
       } else if (activeTab === 'profesores') {
+        const materiasResponse = await axios.get(
+          'http://localhost:8000/api/materias/',
+        );
+        const todasLasMaterias = materiasResponse.data;
         formFields = {
           html: `
             <div class="grid grid-cols-1 gap-4">
@@ -217,6 +231,23 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                 <input id="password" type="password" class="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Materias</label>
+                <div class="max-h-48 overflow-y-auto border rounded-md p-2">
+                  ${materias.map(materia => `
+                    <div class="flex items-center gap-2 p-1">
+                      <input 
+                        type="checkbox" 
+                        id="materia-${materia.id}" 
+                        name="materias_ids[]"
+                        value="${materia.id}"
+                        class="materias-checkbox"
+                      >
+                      <label for="materia-${materia.id}">${materia.nombre}</label>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">¿Es administrador?</label>
@@ -259,7 +290,7 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
           `
         };
       }
-  
+
       const result = await Swal.fire({
         title: 'Crear Nuevo',
         html: formFields.html,
@@ -268,7 +299,7 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
         cancelButtonText: 'Cancelar',
         preConfirm: () => {
           const values: any = {};
-          
+
           if (activeTab === 'alumnos') {
             values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
             values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
@@ -288,7 +319,10 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
             values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
             values.password = (document.getElementById('password') as HTMLInputElement).value;
             values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value;
-            values.confirmPassword = values.password;
+            const materiasCheckboxes = document.querySelectorAll('.materias-checkbox:checked');
+            values.materias_ids = Array.from(materiasCheckboxes).map(
+              (checkbox: any) => parseInt(checkbox.value)
+            );
             values.es_profesor = true;
           } else {
             values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
@@ -298,15 +332,15 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
             values.tipo_propuesta = (document.getElementById('tipo_propuesta') as HTMLSelectElement).value;
             values.visible = true;
           }
-          
+
           return values;
         }
       });
-  
+
       if (result.isConfirmed && result.value) {
         const newItem = await createAdminItem(activeTab, {
           ...result.value,
-          is_admin: result.value.is_admin 
+          is_admin: result.value.is_admin
         });
         await fetchData();
         Swal.fire('¡Creado!', 'El elemento ha sido creado exitosamente.', 'success');
@@ -321,21 +355,21 @@ const TablesAdmin: React.FC<TablesAdminProps> = ({ activeTab2, onTabChange }) =>
     }
   };
 
-const handleEdit = async (item: any) => {
-  try {
+  const handleEdit = async (item: any) => {
+    try {
 
-    const itemId = activeTab === 'alumnos' ? item.id : item.id;
-    
-    console.log('Item completo a editar:', item);
-    console.log('ID del item:', item.id);
-    console.log('Tipo activo:', activeTab);
+      const itemId = activeTab === 'alumnos' ? item.id : item.id;
 
-    
+      console.log('Item completo a editar:', item);
+      console.log('ID del item:', item.id);
+      console.log('Tipo activo:', activeTab);
 
-    let formFields;
-    if (activeTab === 'alumnos') {
-      formFields = {
-        html: `
+
+
+      let formFields;
+      if (activeTab === 'alumnos') {
+        formFields = {
+          html: `
           <div class="grid grid-cols-1 gap-4">
           <input type="hidden" id="user_id" value="${itemId}" />
           <input type="hidden" id="password" value="${item.password}" />
@@ -384,14 +418,14 @@ const handleEdit = async (item: any) => {
             </div>
           </div>
         `
-      };
-    } else if (activeTab === 'profesores') {
-      const materiasResponse = await axios.get(
-        'http://localhost:8000/api/materias/',
-      );
-      const todasLasMaterias = materiasResponse.data;
-      formFields = {
-        html: `
+        };
+      } else if (activeTab === 'profesores') {
+        const materiasResponse = await axios.get(
+          'http://localhost:8000/api/materias/',
+        );
+        const todasLasMaterias = materiasResponse.data;
+        formFields = {
+          html: `
           <div class="grid grid-cols-1 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
@@ -445,10 +479,10 @@ const handleEdit = async (item: any) => {
           </div>
           </div>
         `
-      };
-    } else {
-      formFields = {
-        html: `
+        };
+      } else {
+        formFields = {
+          html: `
           <div class="grid grid-cols-1 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
@@ -482,19 +516,19 @@ const handleEdit = async (item: any) => {
             </div>
           </div>
         `
-      };
-    }
+        };
+      }
 
-    const result = await Swal.fire({
-      title: 'Editar',
-      html: formFields.html,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar',
-      cancelButtonText: 'Cancelar',
-      preConfirm: () => {
-        const values: any = {};
-        
-        if (activeTab === 'alumnos') {
+      const result = await Swal.fire({
+        title: 'Editar',
+        html: formFields.html,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+          const values: any = {};
+
+          if (activeTab === 'alumnos') {
             values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
             values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
             values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
@@ -506,11 +540,11 @@ const handleEdit = async (item: any) => {
             values.confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement).value;
             values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value === 'true';
             values.user = {
-                email: values.email,
-                first_name: values.nombre,
-                last_name: values.apellido_paterno
+              email: values.email,
+              first_name: values.nombre,
+              last_name: values.apellido_paterno
             };
-        } else if (activeTab === 'profesores') {
+          } else if (activeTab === 'profesores') {
             values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
             values.apellido_paterno = (document.getElementById('apellido_paterno') as HTMLInputElement).value;
             values.apellido_materno = (document.getElementById('apellido_materno') as HTMLInputElement).value;
@@ -518,82 +552,82 @@ const handleEdit = async (item: any) => {
             values.departamento = (document.getElementById('departamento') as HTMLSelectElement).value;
             values.is_admin = (document.getElementById('is_admin') as HTMLSelectElement).value === 'true';
             values.materias_ids = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-            .map((cb: any) => parseInt(cb.value))
+              .map((cb: any) => parseInt(cb.value))
             values.user = {
-                email: values.email,
-                first_name: values.nombre,
-                last_name: values.apellido_paterno
+              email: values.email,
+              first_name: values.nombre,
+              last_name: values.apellido_paterno
             };
-        } else if (activeTab === 'propuestas') {
+          } else if (activeTab === 'propuestas') {
             values.nombre = (document.getElementById('nombre') as HTMLInputElement).value;
             values.objetivo = (document.getElementById('objetivo') as HTMLTextAreaElement).value;
             values.cantidad_alumnos = parseInt((document.getElementById('cantidad_alumnos') as HTMLInputElement).value);
             values.cantidad_profesores = parseInt((document.getElementById('cantidad_profesores') as HTMLInputElement).value);
             values.tipo_propuesta = (document.getElementById('tipo_propuesta') as HTMLSelectElement).value;
             values.visible = (document.getElementById('visible') as HTMLSelectElement).value === 'true';
+          }
+
+          return values;
         }
-        
-        return values;
-      }
-    });
-
-    if (result.isConfirmed && result.value) {
-      console.log('Datos a enviar en la actualización:', {
-        ...result.value,
-        user_id: itemId
       });
-      const updatedItem = await updateAdminItem(activeTab, itemId, result.value);
-      console.log('Respuesta de la actualización:', updatedItem);
-      
-      await fetchData();
-      Swal.fire('¡Actualizado!', 'Los cambios han sido guardados.', 'success');
+
+      if (result.isConfirmed && result.value) {
+        console.log('Datos a enviar en la actualización:', {
+          ...result.value,
+          user_id: itemId
+        });
+        const updatedItem = await updateAdminItem(activeTab, itemId, result.value);
+        console.log('Respuesta de la actualización:', updatedItem);
+
+        await fetchData();
+        Swal.fire('¡Actualizado!', 'Los cambios han sido guardados.', 'success');
+      }
+    } catch (error) {
+      console.error('Error al editar:', error);
+      let errorMessage = 'No se pudieron guardar los cambios';
+      // if (axios.isAxiosError(error)) {
+      //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+      //   console.log('Detalles del error:', error.response?.data);
+      // }
+      Swal.fire('Error', errorMessage, 'error');
     }
-  } catch (error) {
-    console.error('Error al editar:', error);
-    let errorMessage = 'No se pudieron guardar los cambios';
-    // if (axios.isAxiosError(error)) {
-    //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
-    //   console.log('Detalles del error:', error.response?.data);
-    // }
-    Swal.fire('Error', errorMessage, 'error');
-  }
-};
+  };
 
-const handleDelete = async (id: number) => {
-  try {
-    console.log('Intentando eliminar item:', {
-      tipo: activeTab,
-      id: id
-    });
+  const handleDelete = async (id: number) => {
+    try {
+      console.log('Intentando eliminar item:', {
+        tipo: activeTab,
+        id: id
+      });
 
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: "Esta acción no se puede deshacer",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    });
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
 
-    if (result.isConfirmed) {
-      console.log('Procediendo con la eliminación...');
-      await deleteAdminItem(activeTab, id);
-      console.log('Eliminación completada');
-      await fetchData();
-      Swal.fire('¡Eliminado!', 'El elemento ha sido eliminado.', 'success');
+      if (result.isConfirmed) {
+        console.log('Procediendo con la eliminación...');
+        await deleteAdminItem(activeTab, id);
+        console.log('Eliminación completada');
+        await fetchData();
+        Swal.fire('¡Eliminado!', 'El elemento ha sido eliminado.', 'success');
+      }
+    } catch (error) {
+      console.error('Error en la eliminación:', error);
+      let errorMessage = 'No se pudo eliminar el elemento';
+      // if (axios.isAxiosError(error)) {
+      //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
+      //   console.log('Detalles del error:', error.response?.data);
+      // }
+      Swal.fire('Error', errorMessage, 'error');
     }
-  } catch (error) {
-    console.error('Error en la eliminación:', error);
-    let errorMessage = 'No se pudo eliminar el elemento';
-    // if (axios.isAxiosError(error)) {
-    //   errorMessage += `: ${error.response?.status} - ${error.response?.statusText}`;
-    //   console.log('Detalles del error:', error.response?.data);
-    // }
-    Swal.fire('Error', errorMessage, 'error');
-  }
-};
+  };
 
   const generateFormFields = (item: any) => {
     if (activeTab === 'alumnos') {
@@ -681,14 +715,14 @@ const handleDelete = async (id: number) => {
       const response = await getAdminData(activeTab);
       console.log(`Datos de ${activeTab}:`, response);
       console.log('Estructura del primer item:', response[0]);
-      
+
       if (!Array.isArray(response)) {
         console.error('La respuesta no es un array:', response);
         setData([]);
         setError('Error en el formato de datos');
         return;
       }
-      
+
       setData(response);
       setError(null);
     } catch (error) {
@@ -703,13 +737,14 @@ const handleDelete = async (id: number) => {
 
   useEffect(() => {
     fetchData();
+    cargarMaterias();
   }, [activeTab]);
 
   const filterData = () => {
     if (!data || !Array.isArray(data)) return [];
-    
+
     const searchLower = searchTerm.toLowerCase();
-    
+
     return data.filter((item: any) => {
       if (activeTab === 'profesores') {
         return (
@@ -719,7 +754,7 @@ const handleDelete = async (id: number) => {
           item.departamento?.toLowerCase().includes(searchLower)
         );
       }
-      
+
       if (activeTab === 'alumnos') {
         return (
           item.email?.toLowerCase().includes(searchLower) ||
@@ -728,7 +763,7 @@ const handleDelete = async (id: number) => {
           item.boleta?.toLowerCase().includes(searchLower)
         );
       }
-      
+
       if (activeTab === 'propuestas') {
         return (
           item.nombre?.toLowerCase().includes(searchLower) ||
@@ -737,7 +772,7 @@ const handleDelete = async (id: number) => {
           item.autor?.email?.toLowerCase().includes(searchLower)
         );
       }
-      
+
       return false;
     });
   };
@@ -748,25 +783,22 @@ const handleDelete = async (id: number) => {
       <div className="flex space-x-4 mb-6">
         <button
           onClick={() => setActiveTab('alumnos')}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === 'alumnos' ? 'bg-primary text-white' : 'bg-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg ${activeTab === 'alumnos' ? 'bg-primary text-white' : 'bg-gray-200'
+            }`}
         >
           Alumnos
         </button>
         <button
           onClick={() => setActiveTab('profesores')}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === 'profesores' ? 'bg-primary text-white' : 'bg-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg ${activeTab === 'profesores' ? 'bg-primary text-white' : 'bg-gray-200'
+            }`}
         >
           Profesores
         </button>
         <button
           onClick={() => setActiveTab('propuestas')}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === 'propuestas' ? 'bg-primary text-white' : 'bg-gray-200'
-          }`}
+          className={`px-4 py-2 rounded-lg ${activeTab === 'propuestas' ? 'bg-primary text-white' : 'bg-gray-200'
+            }`}
         >
           Propuestas
         </button>
@@ -774,32 +806,32 @@ const handleDelete = async (id: number) => {
 
       {/* Barra de búsqueda y exportación */}
       <div className="flex mb-6 gap-4">
-  <div className="relative flex-1">
-    <input
-      type="text"
-      placeholder="Buscar..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full pl-10 pr-4 py-2 border rounded-lg"
-    />
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-  </div>
-  <button
-    onClick={handleCreate}
-    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
-  >
-    <PlusCircle size={18} />
-    <span>Crear Nuevo</span>
-  </button>
-  <button
-    onClick={exportToCSV}
-    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
-    title="Exportar a CSV"
-  >
-    <Download size={18} />
-    <span>Exportar CSV</span>
-  </button>
-</div>
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border rounded-lg"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        </div>
+        <button
+          onClick={handleCreate}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
+        >
+          <PlusCircle size={18} />
+          <span>Crear Nuevo</span>
+        </button>
+        <button
+          onClick={exportToCSV}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+          title="Exportar a CSV"
+        >
+          <Download size={18} />
+          <span>Exportar CSV</span>
+        </button>
+      </div>
 
       {/* Tabla */}
       <div className="overflow-x-auto bg-white rounded-lg shadow">
@@ -923,8 +955,8 @@ const handleDelete = async (id: number) => {
                       <td className="px-6 py-4">{item.tipo_propuesta}</td>
                       <td className="px-6 py-4">{item.autor?.nombre || 'No disponible'}</td>
                       <td className="px-6 py-4">
-                        {item.fecha_creacion ? 
-                          new Date(item.fecha_creacion).toLocaleDateString() : 
+                        {item.fecha_creacion ?
+                          new Date(item.fecha_creacion).toLocaleDateString() :
                           'No disponible'
                         }
                       </td>
